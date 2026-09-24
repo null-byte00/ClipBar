@@ -1,0 +1,199 @@
+<Window x:Class="ClipBar.UI.Screenshot.RegionCaptureWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="ClipBar — скриншот области"
+        WindowStyle="None" AllowsTransparency="False" ResizeMode="NoResize" Background="Black"
+        ShowInTaskbar="False" Topmost="True" ShowActivated="True"
+        FontFamily="{StaticResource CB.Font}" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        Cursor="Cross" PreviewKeyDown="Window_PreviewKeyDown">
+    <Window.Resources>
+        <Style x:Key="Rc.Tool" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="tools" />
+            <Setter Property="Width" Value="58" />
+            <Setter Property="Height" Value="46" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Foreground" Value="#FFE8E8E8" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="6" Padding="2,4,2,3">
+                            <StackPanel>
+                                <ui:SymbolIcon Symbol="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" FontSize="19" HorizontalAlignment="Center" />
+                                <TextBlock Text="{TemplateBinding Content}" FontSize="10.5" HorizontalAlignment="Center" Margin="0,3,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#26FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#40E81123" />
+                                <Setter Property="Foreground" Value="#FFFF6B7A" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="Rc.Action" TargetType="Button">
+            <Setter Property="Height" Value="46" />
+            <Setter Property="MinWidth" Value="58" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Foreground" Value="#FFE8E8E8" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6" Padding="8,4,8,3">
+                            <StackPanel>
+                                <ui:SymbolIcon Symbol="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" FontSize="19" HorizontalAlignment="Center" />
+                                <TextBlock Text="{TemplateBinding Content}" FontSize="10.5" HorizontalAlignment="Center" Margin="0,3,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#26FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style x:Key="Rc.Swatch" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="colors" />
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid>
+                            <Ellipse x:Name="Ring" Stroke="Transparent" StrokeThickness="2" />
+                            <Ellipse Margin="4" Fill="{TemplateBinding Background}" Stroke="#66000000" StrokeThickness="1" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Ring" Property="Stroke" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Ring" Property="Stroke" Value="#99FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="Rc.Size" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="sizes" />
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Margin" Value="1,2" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" CornerRadius="4" Background="Transparent">
+                            <Ellipse Width="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
+                                     Height="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Fill="#FFE8E8E8" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#40FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid x:Name="Root" MouseLeftButtonDown="Root_MouseDown" MouseMove="Root_MouseMove" MouseLeftButtonUp="Root_MouseUp"
+          MouseRightButtonUp="Root_MouseRightButtonUp">
+        <Grid x:Name="Composite">
+            <Image x:Name="Frozen" Stretch="Fill" RenderOptions.BitmapScalingMode="NearestNeighbor" />
+            <Canvas x:Name="Ink" />
+        </Grid>
+
+        <Path Fill="#8C000000" IsHitTestVisible="False">
+            <Path.Data>
+                <CombinedGeometry GeometryCombineMode="Exclude">
+                    <CombinedGeometry.Geometry1>
+                        <RectangleGeometry x:Name="DimAll" />
+                    </CombinedGeometry.Geometry1>
+                    <CombinedGeometry.Geometry2>
+                        <RectangleGeometry x:Name="DimHole" />
+                    </CombinedGeometry.Geometry2>
+                </CombinedGeometry>
+            </Path.Data>
+        </Path>
+
+        <Canvas x:Name="Chrome" IsHitTestVisible="False">
+            <Rectangle x:Name="SelBorder" Stroke="White" StrokeThickness="1" StrokeDashArray="4 3" Visibility="Collapsed" />
+            <Border x:Name="SizeBadge" Background="#E6141414" CornerRadius="4" Padding="6,2" Visibility="Collapsed">
+                <TextBlock x:Name="SizeText" Foreground="White" FontSize="12" />
+            </Border>
+            <Border x:Name="HelpBadge" Background="#E6141414" CornerRadius="6" Padding="12,7" Canvas.Left="24" Canvas.Top="24">
+                <TextBlock Foreground="#FFE0E0E0" FontSize="13" Text="Выдели область мышкой  ·  Esc — отмена" />
+            </Border>
+        </Canvas>
+
+        <Canvas>
+            <Border x:Name="Toolbar" Background="#F2181818" CornerRadius="10" BorderBrush="#33FFFFFF" BorderThickness="1"
+                    Padding="4" Visibility="Collapsed" Cursor="Arrow" PreviewMouseLeftButtonDown="Toolbar_PreviewMouseDown"
+                    MouseLeftButtonDown="Toolbar_MouseDown">
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton x:Name="MoveTool" Style="{StaticResource Rc.Tool}" Content="Рамка" Tag="{x:Static ui:SymbolRegular.SelectObject20}"
+                                 ToolTip="Двигать и растягивать рамку" IsChecked="True" Checked="Tool_Checked" />
+                    <RadioButton x:Name="PenTool" Style="{StaticResource Rc.Tool}" Content="Карандаш" Tag="{x:Static ui:SymbolRegular.Pen20}" Checked="Tool_Checked" />
+                    <RadioButton x:Name="MarkerTool" Style="{StaticResource Rc.Tool}" Content="Маркер" Tag="{x:Static ui:SymbolRegular.Highlight20}"
+                                 ToolTip="Полупрозрачный выделитель" Checked="Tool_Checked" />
+                    <RadioButton x:Name="LineTool" Style="{StaticResource Rc.Tool}" Content="Линия" Tag="{x:Static ui:SymbolRegular.Line20}" Checked="Tool_Checked" />
+                    <RadioButton x:Name="ArrowTool" Style="{StaticResource Rc.Tool}" Content="Стрелка" Tag="{x:Static ui:SymbolRegular.ArrowUpRight20}" Checked="Tool_Checked" />
+                    <RadioButton x:Name="RectTool" Style="{StaticResource Rc.Tool}" Content="Рамка+" Tag="{x:Static ui:SymbolRegular.RectangleLandscape20}"
+                                 ToolTip="Прямоугольник" Checked="Tool_Checked" />
+                    <RadioButton x:Name="TextTool" Style="{StaticResource Rc.Tool}" Content="Текст" Tag="{x:Static ui:SymbolRegular.TextT20}"
+                                 ToolTip="Кликни и пиши; Enter — готово" Checked="Tool_Checked" />
+                    <RadioButton x:Name="BlurTool" Style="{StaticResource Rc.Tool}" Content="Замазать" Tag="{x:Static ui:SymbolRegular.Blur20}"
+                                 ToolTip="Пикселизация — спрятать ник, номер, переписку" Checked="Tool_Checked" />
+
+                    <Rectangle Width="1" Fill="#33FFFFFF" Margin="4,6" />
+                    <StackPanel VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Style="{StaticResource Rc.Swatch}" Background="#FFFF2D3F" IsChecked="True" Checked="Color_Checked" />
+                            <RadioButton Style="{StaticResource Rc.Swatch}" Background="#FFFFD60A" Checked="Color_Checked" />
+                            <RadioButton Style="{StaticResource Rc.Swatch}" Background="#FF30D158" Checked="Color_Checked" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Style="{StaticResource Rc.Swatch}" Background="#FF0A84FF" Checked="Color_Checked" />
+                            <RadioButton Style="{StaticResource Rc.Swatch}" Background="#FFFFFFFF" Checked="Color_Checked" />
+                            <RadioButton Style="{StaticResource Rc.Swatch}" Background="#FF000000" Checked="Color_Checked" />
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel VerticalAlignment="Center" Margin="4,0,0,0" ToolTip="Толщина">
+                        <RadioButton Style="{StaticResource Rc.Size}" Tag="4" Checked="Size_Checked" />
+                        <RadioButton Style="{StaticResource Rc.Size}" Tag="8" IsChecked="True" Checked="Size_Checked" />
+                    </StackPanel>
+                    <StackPanel VerticalAlignment="Center">
+                        <RadioButton Style="{StaticResource Rc.Size}" Tag="12" Checked="Size_Checked" />
+                        <RadioButton Style="{StaticResource Rc.Size}" Tag="16" Checked="Size_Checked" />
+                    </StackPanel>
+
+                    <Rectangle Width="1" Fill="#33FFFFFF" Margin="4,6" />
+                    <Button Style="{StaticResource Rc.Action}" Content="Отменить" Tag="{x:Static ui:SymbolRegular.ArrowUndo20}" ToolTip="Ctrl+Z" Click="Undo_Click" />
+                    <Button Style="{StaticResource Rc.Action}" Content="Копировать" Tag="{x:Static ui:SymbolRegular.Copy20}" ToolTip="В буфер обмена (Ctrl+C)" Click="Copy_Click" />
+                    <Button Style="{StaticResource Rc.Action}" Content="Сохранить" Tag="{x:Static ui:SymbolRegular.Save20}" ToolTip="В папку клипов + в буфер (Ctrl+S / Enter)"
+                            Background="#33E81123" Click="Save_Click" />
+                    <Button Style="{StaticResource Rc.Action}" Content="Как…" Tag="{x:Static ui:SymbolRegular.SaveEdit20}"
+                            ToolTip="Сохранить как… — выбрать папку, имя и формат (Ctrl+Shift+S)" Click="SaveAs_Click" />
+                    <Button Style="{StaticResource Rc.Action}" Content="Закрыть" Tag="{x:Static ui:SymbolRegular.Dismiss20}" ToolTip="Esc" Click="Cancel_Click" />
+                </StackPanel>
+            </Border>
+        </Canvas>
+    </Grid>
+</Window>

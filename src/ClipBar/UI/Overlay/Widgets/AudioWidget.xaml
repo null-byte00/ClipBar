@@ -1,0 +1,67 @@
+<UserControl x:Class="ClipBar.UI.Overlay.Widgets.AudioWidget"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:c="clr-namespace:ClipBar.UI.Overlay.Controls"
+             Width="304" Focusable="False">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/UI/Overlay/OverlayStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <StackPanel Margin="16,0,16,14">
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ui:SymbolIcon x:Name="SysIcon" Symbol="Speaker224" FontSize="18" Foreground="{StaticResource CB.TextSecondary}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Звук системы" Style="{StaticResource CB.Text.Body}" Margin="10,0,0,0" VerticalAlignment="Center" />
+            <TextBlock x:Name="SysPercent" Grid.Column="2" Text="100%" Style="{StaticResource CB.Text.Caption}" VerticalAlignment="Center" />
+        </Grid>
+        <Slider x:Name="SysSlider" Minimum="0" Maximum="200" Value="100" SmallChange="1" LargeChange="10"
+                IsMoveToPointEnabled="True" Margin="0,2,0,0" ToolTip="Громкость системного звука в записи (100% = как есть)" />
+        <c:LevelMeter x:Name="SysMeter" Margin="2,0,2,0" />
+        <ComboBox x:Name="OutputCombo" Margin="0,10,0,0" HorizontalAlignment="Stretch" FontSize="13"
+                  ToolTip="Какое устройство вывода записывать" />
+
+        <Border Height="1" Background="{StaticResource CB.Divider}" Margin="0,14,0,12" />
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ui:SymbolIcon x:Name="MicIcon" Symbol="Mic24" FontSize="18" Foreground="{StaticResource CB.TextSecondary}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Микрофон" Style="{StaticResource CB.Text.Body}" Margin="10,0,0,0" VerticalAlignment="Center" />
+            <TextBlock x:Name="MicPercent" Grid.Column="2" Text="100%" Style="{StaticResource CB.Text.Caption}" VerticalAlignment="Center" />
+        </Grid>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <Slider x:Name="MicSlider" Minimum="0" Maximum="200" Value="100" SmallChange="1" LargeChange="10"
+                        IsMoveToPointEnabled="True" Margin="0,2,0,0" ToolTip="Громкость микрофона в записи" />
+                <c:LevelMeter x:Name="MicMeter" Margin="2,0,2,0" />
+            </StackPanel>
+            <ToggleButton x:Name="MuteToggle" Grid.Column="1" Style="{StaticResource Ov.MuteToggle}" Margin="10,0,0,4"
+                          VerticalAlignment="Center" Click="Mute_Click">
+                <ui:SymbolIcon x:Name="MuteIcon" Symbol="Mic20" FontSize="16" />
+            </ToggleButton>
+        </Grid>
+        <ComboBox x:Name="MicCombo" Margin="0,10,0,0" HorizontalAlignment="Stretch" FontSize="13"
+                  ToolTip="Какой микрофон записывать" />
+
+        <TextBlock x:Name="HintText" Style="{StaticResource CB.Text.Caption}" Foreground="{StaticResource CB.Warning}"
+                   TextWrapping="Wrap" Margin="0,10,0,0" Visibility="Collapsed"
+                   Text="Идёт запись — новое устройство будет использовано после её остановки." />
+    </StackPanel>
+</UserControl>

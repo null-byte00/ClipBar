@@ -1,0 +1,70 @@
+<UserControl x:Class="ClipBar.UI.Overlay.Widgets.PerformanceWidget"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:c="clr-namespace:ClipBar.UI.Overlay.Controls"
+             Width="344" Focusable="False">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/UI/Overlay/OverlayStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="12,0,12,12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="104" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel x:Name="Rows">
+            <RadioButton x:Name="CpuRow" Style="{StaticResource Ov.MetricRow}" GroupName="perf" IsChecked="True" Checked="Row_Checked" Tag="cpu">
+                <StackPanel>
+                    <TextBlock Text="ЦП" Style="{StaticResource CB.Text.Caption}" FontSize="11" />
+                    <TextBlock x:Name="CpuValue" Text="—" Style="{StaticResource CB.Text.Title}" FontSize="16" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton x:Name="GpuRow" Style="{StaticResource Ov.MetricRow}" GroupName="perf" Checked="Row_Checked" Tag="gpu">
+                <StackPanel>
+                    <TextBlock Text="ГП" Style="{StaticResource CB.Text.Caption}" FontSize="11" />
+                    <TextBlock x:Name="GpuValue" Text="—" Style="{StaticResource CB.Text.Title}" FontSize="16" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton x:Name="RamRow" Style="{StaticResource Ov.MetricRow}" GroupName="perf" Checked="Row_Checked" Tag="ram">
+                <StackPanel>
+                    <TextBlock Text="ОЗУ" Style="{StaticResource CB.Text.Caption}" FontSize="11" />
+                    <TextBlock x:Name="RamValue" Text="—" Style="{StaticResource CB.Text.Title}" FontSize="16" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton x:Name="AppRow" Style="{StaticResource Ov.MetricRow}" GroupName="perf" Checked="Row_Checked" Tag="app" Margin="0"
+                         ToolTip="Нагрузка самого ClipBar вместе с его процессом ffmpeg">
+                <StackPanel>
+                    <TextBlock Text="ClipBar" Style="{StaticResource CB.Text.Caption}" FontSize="11" />
+                    <TextBlock x:Name="AppValue" Text="—" Style="{StaticResource CB.Text.Title}" FontSize="16" />
+                </StackPanel>
+            </RadioButton>
+        </StackPanel>
+
+        <Border Grid.Column="1" Margin="10,0,0,0" Background="{StaticResource Ov.Graph}" CornerRadius="{StaticResource CB.Radius.Control}" Padding="0" ClipToBounds="True">
+            <Grid>
+                <c:Sparkline x:Name="Graph" Stroke="{StaticResource CB.Accent}" GridBrush="{StaticResource CB.Divider}" Margin="0,8,0,8" />
+                <TextBlock x:Name="AxisTop" Text="100%" Style="{StaticResource CB.Text.Caption}" FontSize="10" Foreground="{StaticResource CB.TextTertiary}"
+                           HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,6,0" />
+                <TextBlock Text="0" Style="{StaticResource CB.Text.Caption}" FontSize="10" Foreground="{StaticResource CB.TextTertiary}"
+                           HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,6,3" />
+                <TextBlock Text="60 с" Style="{StaticResource CB.Text.Caption}" FontSize="10" Foreground="{StaticResource CB.TextTertiary}"
+                           HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="6,0,0,3" />
+                <TextBlock x:Name="GraphTitle" Text="Процессор" Style="{StaticResource CB.Text.Caption}" FontSize="11"
+                           HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8,5,0,0" />
+            </Grid>
+        </Border>
+
+        <TextBlock x:Name="Footprint" Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource CB.Text.Caption}" FontSize="11"
+                   Foreground="{StaticResource CB.TextTertiary}" Margin="2,8,0,0" Text="ClipBar + ffmpeg: — МБ" TextTrimming="CharacterEllipsis" />
+    </Grid>
+</UserControl>

@@ -1,0 +1,398 @@
+<Page x:Class="ClipBar.UI.Pages.HomePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:local="clr-namespace:ClipBar.UI.Pages"
+      Title="Главная"
+      Background="Transparent"
+      FontFamily="{StaticResource CB.Font}"
+      Foreground="{StaticResource CB.TextPrimary}">
+
+    <Page.Resources>
+        <local:ThumbnailConverter x:Key="Thumb" />
+        <local:DurationConverter x:Key="Duration" />
+        <local:NullToVisibilityConverter x:Key="NullToVisible" />
+        <SolidColorBrush x:Key="Home.OnAccent" Color="#1B1B1B" />
+
+        <Style x:Key="Home.BigButton" TargetType="Button">
+            <Setter Property="Height" Value="72" />
+            <Setter Property="MinWidth" Value="196" />
+            <Setter Property="Padding" Value="18,0,22,0" />
+            <Setter Property="Background" Value="{StaticResource CB.Control}" />
+            <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CB.WidgetBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource CB.Radius.Widget}"
+                                Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlHover}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlPressed}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <ControlTemplate x:Key="Home.FilledButtonTemplate" TargetType="Button">
+            <Grid>
+                <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="{StaticResource CB.Radius.Widget}"
+                        Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" />
+                </Border>
+                <Border x:Name="Hover" Background="#FFFFFF" Opacity="0" CornerRadius="{StaticResource CB.Radius.Widget}" IsHitTestVisible="False" />
+            </Grid>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Hover" Property="Opacity" Value="0.08" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter TargetName="Hover" Property="Opacity" Value="0" />
+                    <Setter TargetName="Bd" Property="Opacity" Value="0.8" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.45" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+        <Style x:Key="Home.AccentButton" TargetType="Button" BasedOn="{StaticResource Home.BigButton}">
+            <Setter Property="Background" Value="{StaticResource CB.Accent}" />
+            <Setter Property="Foreground" Value="{StaticResource Home.OnAccent}" />
+            <Setter Property="Template" Value="{StaticResource Home.FilledButtonTemplate}" />
+        </Style>
+        <Style x:Key="Home.RecordButton" TargetType="Button" BasedOn="{StaticResource Home.BigButton}">
+            <Setter Property="Background" Value="{StaticResource CB.Record}" />
+            <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+            <Setter Property="Template" Value="{StaticResource Home.FilledButtonTemplate}" />
+        </Style>
+
+        <Style x:Key="Home.Chip" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CB.Control}" />
+            <Setter Property="CornerRadius" Value="13" />
+            <Setter Property="Padding" Value="11,5,12,5" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+        </Style>
+        <Style x:Key="Home.ChipText" TargetType="TextBlock" BasedOn="{StaticResource CB.Text.Caption}">
+            <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="7,0,0,0" />
+        </Style>
+        <Style x:Key="Home.ChipIcon" TargetType="ui:SymbolIcon">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Foreground" Value="{StaticResource CB.TextSecondary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="Home.KeyCap" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CB.Control}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CB.WidgetBorder}" />
+            <Setter Property="BorderThickness" Value="1,1,1,2" />
+            <Setter Property="CornerRadius" Value="{StaticResource CB.Radius.Small}" />
+            <Setter Property="Padding" Value="7,1,7,2" />
+            <Setter Property="MinWidth" Value="26" />
+            <Setter Property="Margin" Value="0,0,3,0" />
+        </Style>
+
+        <Style x:Key="Home.CardTitle" TargetType="TextBlock" BasedOn="{StaticResource CB.Text.Title}">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="10,0,0,0" />
+        </Style>
+        <Style x:Key="Home.CardIcon" TargetType="ui:SymbolIcon">
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="Foreground" Value="{StaticResource CB.Accent}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="Home.Link" TargetType="ui:HyperlinkButton">
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Margin" Value="0,-4,-8,-4" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="Home.Tile" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource CB.Control}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="{StaticResource CB.Radius.Control}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" SnapsToDevicePixels="True">
+                            <Grid>
+                                <ContentPresenter />
+                                <Border x:Name="Hover" Background="#FFFFFF" Opacity="0" CornerRadius="{StaticResource CB.Radius.Control}" IsHitTestVisible="False" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Hover" Property="Opacity" Value="0.07" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource CB.Accent}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.85" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="36,4,36,28" MaxWidth="1280">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Style="{StaticResource CB.CardPanel}" Padding="0">
+                <Border CornerRadius="{StaticResource CB.Radius.Widget}" ClipToBounds="True" Padding="26,22,26,24">
+                    <Grid>
+                        <Ellipse x:Name="Glow" Width="520" Height="360" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                 Margin="-200,-220,0,0" IsHitTestVisible="False">
+                            <Ellipse.Fill>
+                                <RadialGradientBrush>
+                                    <GradientStop x:Name="GlowStop" Color="#2E6CCB5F" Offset="0" />
+                                    <GradientStop x:Name="GlowStopEnd" Color="#006CCB5F" Offset="1" />
+                                </RadialGradientBrush>
+                            </Ellipse.Fill>
+                        </Ellipse>
+
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Grid Width="18" Height="18" Margin="0,4,14,0" VerticalAlignment="Top">
+                                        <Ellipse x:Name="StatusHalo" Width="18" Height="18" Fill="{StaticResource CB.Success}" Opacity="0.25"
+                                                 RenderTransformOrigin="0.5,0.5">
+                                            <Ellipse.RenderTransform>
+                                                <ScaleTransform x:Name="HaloScale" />
+                                            </Ellipse.RenderTransform>
+                                        </Ellipse>
+                                        <Ellipse x:Name="StatusDot" Width="10" Height="10" Fill="{StaticResource CB.Success}" />
+                                    </Grid>
+                                    <StackPanel>
+                                        <TextBlock x:Name="StatusTitle" Style="{StaticResource CB.Text.Big}" FontSize="24" Text="Откат работает" />
+                                        <TextBlock x:Name="StatusSubtitle" Style="{StaticResource CB.Text.Caption}" FontSize="13" Margin="0,3,0,0"
+                                                   Text="Хранятся последние 5 мин" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <ui:ToggleSwitch x:Name="ReplayToggle" Grid.Column="1" Content="Откат" VerticalAlignment="Top" Margin="16,0,0,0"
+                                                 Checked="OnReplayToggled" Unchecked="OnReplayToggled" ToolTip="Буфер мгновенного отката" />
+                            </Grid>
+
+                            <WrapPanel Margin="0,16,0,-8">
+                                <Border Style="{StaticResource Home.Chip}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Style="{StaticResource Home.ChipIcon}" Symbol="DeveloperBoard20" />
+                                        <TextBlock x:Name="EncoderChip" Style="{StaticResource Home.ChipText}" Text="Авто-выбор энкодера" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Home.Chip}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Style="{StaticResource Home.ChipIcon}" Symbol="Desktop20" />
+                                        <TextBlock x:Name="VideoChip" Style="{StaticResource Home.ChipText}" Text="1920×1080 · 60 fps" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Home.Chip}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon x:Name="AudioChipIcon" Style="{StaticResource Home.ChipIcon}" Symbol="Speaker220" />
+                                        <TextBlock x:Name="AudioChip" Style="{StaticResource Home.ChipText}" Text="Система + микрофон" />
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
+
+                            <ui:InfoBar x:Name="ErrorBar" Severity="Error" IsClosable="False" IsOpen="False" Margin="0,18,0,0"
+                                        Title="Захват не работает" Message="">
+                                <ui:Button x:Name="RestartButton" Content="Перезапустить" Appearance="Secondary" Click="OnRestartClick" Margin="0,2,0,6">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="ArrowSync20" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                            </ui:InfoBar>
+
+                            <Rectangle Height="1" Fill="{StaticResource CB.Divider}" Margin="0,20,0,20" />
+
+                            <WrapPanel Margin="0,0,0,-12">
+                                <Button x:Name="SaveButton" Style="{StaticResource Home.AccentButton}" Margin="0,0,12,12" Click="OnSaveClick">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Symbol="ArrowCounterclockwise24" FontSize="28" Margin="0,0,14,0" VerticalAlignment="Center" />
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="Сохранить откат" FontSize="14" FontWeight="SemiBold" />
+                                            <TextBlock x:Name="SaveHotkey" Text="Alt+F10" FontSize="12" Opacity="0.72" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="RecordButton" Style="{StaticResource Home.RecordButton}" Margin="0,0,12,12" Click="OnRecordClick">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon x:Name="RecordIcon" Symbol="Record24" FontSize="28" Margin="0,0,14,0" VerticalAlignment="Center" />
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock x:Name="RecordLabel" Text="Начать запись" FontSize="14" FontWeight="SemiBold" />
+                                            <TextBlock x:Name="RecordHotkey" Text="Alt+F9" FontSize="12" Opacity="0.78" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="ShotButton" Style="{StaticResource Home.BigButton}" Margin="0,0,12,12" Click="OnScreenshotClick">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Symbol="Camera24" FontSize="28" Margin="0,0,14,0" VerticalAlignment="Center" />
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="Скриншот" FontSize="14" FontWeight="SemiBold" />
+                                            <TextBlock x:Name="ShotHotkey" Text="Alt+F1" FontSize="12" Opacity="0.72" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Border>
+
+            <Grid Grid.Row="1" Margin="0,16,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" MinWidth="240" />
+                    <ColumnDefinition Width="1.05*" MinWidth="260" />
+                    <ColumnDefinition Width="1.35*" MinWidth="300" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource CB.CardPanel}" Margin="0,0,8,0" Padding="18,16,18,18">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Style="{StaticResource Home.CardIcon}" Symbol="Speaker224" />
+                                <TextBlock Style="{StaticResource Home.CardTitle}" Text="Звук" />
+                            </StackPanel>
+                            <Button x:Name="MicButton" Style="{StaticResource CB.IconButton}" HorizontalAlignment="Right" Margin="0,-6,-8,-6"
+                                    Click="OnMicClick" ToolTip="Микрофон вкл / выкл">
+                                <ui:SymbolIcon x:Name="MicButtonIcon" Symbol="Mic20" FontSize="18" />
+                            </Button>
+                        </Grid>
+                        <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="0,8,0,0">
+                            <Grid Margin="0,10,0,0">
+                                <TextBlock Style="{StaticResource CB.Text.Caption}" Text="Система" />
+                                <TextBlock x:Name="SysValue" Style="{StaticResource CB.Text.Caption}" HorizontalAlignment="Right"
+                                           Foreground="{StaticResource CB.TextTertiary}" Text="" />
+                            </Grid>
+                            <Border x:Name="SysTrack" Height="6" CornerRadius="3" Background="{StaticResource CB.Control}" Margin="0,7,0,0">
+                                <Border x:Name="SysBar" Width="0" HorizontalAlignment="Left" CornerRadius="3" Background="{StaticResource CB.Accent}" />
+                            </Border>
+                            <Grid Margin="0,18,0,0">
+                                <TextBlock x:Name="MicLabel" Style="{StaticResource CB.Text.Caption}" Text="Микрофон" />
+                                <TextBlock x:Name="MicValue" Style="{StaticResource CB.Text.Caption}" HorizontalAlignment="Right"
+                                           Foreground="{StaticResource CB.TextTertiary}" Text="" />
+                            </Grid>
+                            <Border x:Name="MicTrack" Height="6" CornerRadius="3" Background="{StaticResource CB.Control}" Margin="0,7,0,0">
+                                <Border x:Name="MicBar" Width="0" HorizontalAlignment="Left" CornerRadius="3" Background="{StaticResource CB.Accent}" />
+                            </Border>
+                            <TextBlock x:Name="AudioHint" Style="{StaticResource CB.Text.Caption}" Foreground="{StaticResource CB.TextTertiary}"
+                                       Margin="0,16,0,0" TextWrapping="Wrap" Text="Дорожки пишутся отдельно: микс, система, микрофон." />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="1" Style="{StaticResource CB.CardPanel}" Margin="8,0,8,0" Padding="18,16,18,18">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Style="{StaticResource Home.CardIcon}" Symbol="Keyboard24" />
+                                <TextBlock Style="{StaticResource Home.CardTitle}" Text="Горячие клавиши" />
+                            </StackPanel>
+                            <ui:HyperlinkButton Style="{StaticResource Home.Link}" HorizontalAlignment="Right" Content="Изменить" Click="OnEditHotkeysClick" />
+                        </Grid>
+                        <StackPanel x:Name="HotkeyList" Grid.Row="1" Margin="0,14,0,0" />
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource CB.CardPanel}" Margin="8,0,0,0" Padding="18,16,18,18">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Style="{StaticResource Home.CardIcon}" Symbol="VideoClipMultiple24" />
+                                <TextBlock Style="{StaticResource Home.CardTitle}" Text="Последние клипы" />
+                            </StackPanel>
+                            <ui:HyperlinkButton Style="{StaticResource Home.Link}" HorizontalAlignment="Right" Content="Все клипы" Click="OnAllClipsClick" />
+                        </Grid>
+                        <Grid Grid.Row="1" Margin="0,14,0,0">
+                            <ItemsControl x:Name="ClipList" Margin="0,0,-8,-8">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="2" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource Home.Tile}" Margin="0,0,8,8" Click="OnClipClick" Height="98"
+                                                ToolTip="{Binding FileName}">
+                                            <Grid>
+                                                <ui:SymbolIcon Symbol="VideoClip24" FontSize="26" Foreground="{StaticResource CB.TextTertiary}"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                <ui:Image Source="{Binding ThumbnailPath, Converter={StaticResource Thumb}}" Stretch="UniformToFill"
+                                                          CornerRadius="5" />
+                                                <Border VerticalAlignment="Bottom" CornerRadius="0,0,5,5" Padding="8,16,8,6">
+                                                    <Border.Background>
+                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                            <GradientStop Color="#00000000" Offset="0" />
+                                                            <GradientStop Color="#D0000000" Offset="1" />
+                                                        </LinearGradientBrush>
+                                                    </Border.Background>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{Binding Title}" FontSize="12" Foreground="{StaticResource CB.TextPrimary}"
+                                                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Bottom" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding Duration, Converter={StaticResource Duration}}" FontSize="11"
+                                                                   Foreground="{StaticResource CB.TextSecondary}" Margin="8,0,0,0" VerticalAlignment="Bottom" />
+                                                    </Grid>
+                                                </Border>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel x:Name="ClipsEmpty" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed" Margin="0,12">
+                                <ui:SymbolIcon Symbol="VideoClipMultiple24" FontSize="34" Foreground="{StaticResource CB.TextTertiary}" HorizontalAlignment="Center" />
+                                <TextBlock Style="{StaticResource CB.Text.Body}" Text="Пока пусто" HorizontalAlignment="Center" Margin="0,10,0,0" />
+                                <TextBlock x:Name="ClipsEmptyHint" Style="{StaticResource CB.Text.Caption}" Foreground="{StaticResource CB.TextTertiary}"
+                                           Text="Сохрани первый откат: Alt+F10" HorizontalAlignment="Center" Margin="0,3,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </ScrollViewer>
+</Page>

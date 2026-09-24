@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>ClipBar-Setup</AssemblyName>
+    <RootNamespace>ClipBar.Setup</RootNamespace>
+    <Version>1.0.0</Version>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\ClipBar\Assets\clipbar.ico</ApplicationIcon>
+    <SatelliteResourceLanguages>ru;en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="..\ClipBar\Assets\clipbar.png" Link="Assets\clipbar.png" />
+    <EmbeddedResource Include="$(PayloadZip)" LogicalName="payload.zip" Condition="'$(PayloadZip)' != '' And Exists('$(PayloadZip)')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+  </ItemGroup>
+
+</Project>

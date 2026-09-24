@@ -1,0 +1,528 @@
+<Page x:Class="ClipBar.UI.Pages.SettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:pages="clr-namespace:ClipBar.UI.Pages"
+      Title="Настройки"
+      FontFamily="{StaticResource CB.Font}"
+      Foreground="{StaticResource CB.TextPrimary}"
+      Background="Transparent">
+
+    <Page.Resources>
+        <Style x:Key="Row" TargetType="ui:CardControl">
+            <Setter Property="Margin" Value="0,0,0,4" />
+            <Setter Property="Padding" Value="16,13,16,13" />
+            <Setter Property="MinHeight" Value="66" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="{StaticResource CB.Card}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CB.Divider}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="Expander" TargetType="ui:CardExpander">
+            <Setter Property="Margin" Value="0,0,0,4" />
+            <Setter Property="Padding" Value="16,13,16,13" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="{StaticResource CB.Card}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CB.Divider}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="ContentPadding" Value="16,14,16,16" />
+        </Style>
+
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource CB.FontDisplay}" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+            <Setter Property="Margin" Value="0,30,0,10" />
+        </Style>
+
+        <Style x:Key="Hint" TargetType="TextBlock" BasedOn="{StaticResource CB.Text.Caption}">
+            <Setter Property="Foreground" Value="{StaticResource CB.TextTertiary}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="2,-4,0,10" />
+        </Style>
+
+        <Style x:Key="Combo" TargetType="ComboBox">
+            <Setter Property="MinWidth" Value="220" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="Toggle" TargetType="ui:ToggleSwitch">
+            <Setter Property="OnContent" Value="Вкл." />
+            <Setter Property="OffContent" Value="Выкл." />
+            <Setter Property="LabelPosition" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+        </Style>
+
+        <Style x:Key="Unit" TargetType="TextBlock" BasedOn="{StaticResource CB.Text.Body}">
+            <Setter Property="Foreground" Value="{StaticResource CB.TextSecondary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+        </Style>
+
+        <Style x:Key="SubLabel" TargetType="TextBlock" BasedOn="{StaticResource CB.Text.Body}">
+            <Setter Property="Foreground" Value="{StaticResource CB.TextSecondary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,16,0" />
+            <Setter Property="MinWidth" Value="96" />
+        </Style>
+
+        <Style x:Key="Chip" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+            <Setter Property="Background" Value="{StaticResource CB.Control}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CB.WidgetBorder}" />
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1" CornerRadius="16" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="False" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlHover}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.Accent}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource CB.Accent}" />
+                                <Setter Property="Foreground" Value="#FF1B1B1B" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="AccentButton" TargetType="Button">
+            <Setter Property="Foreground" Value="#FF1B1B1B" />
+            <Setter Property="Background" Value="{StaticResource CB.Accent}" />
+            <Setter Property="Padding" Value="14,7" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="{StaticResource CB.Radius.Small}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.75" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FlatButton" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+            <Setter Property="Background" Value="{StaticResource CB.Control}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CB.WidgetBorder}" />
+            <Setter Property="Padding" Value="14,7" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
+                                CornerRadius="{StaticResource CB.Radius.Small}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlHover}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlPressed}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly">
+        <Grid Margin="36,12,24,48">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MaxWidth="1000" />
+            </Grid.ColumnDefinitions>
+            <StackPanel x:Name="Body">
+
+                <TextBlock x:Name="PageTitle" Style="{StaticResource CB.Text.Big}" Text="Настройки" Margin="0,12,0,4" />
+
+                <Border x:Name="RestartBar" Visibility="Collapsed" Margin="0,14,0,0" CornerRadius="8" BorderThickness="1"
+                        Background="#1F4CC2FF" BorderBrush="#3D4CC2FF" Padding="16,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:SymbolIcon Symbol="Info24" Filled="True" FontSize="18" Foreground="{StaticResource CB.Accent}" VerticalAlignment="Top" Margin="0,1,12,0" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Style="{StaticResource CB.Text.Title}" Text="Изменения вступят в силу после перезапуска захвата" TextWrapping="Wrap" />
+                            <TextBlock x:Name="RestartBarMessage" Style="{StaticResource CB.Text.Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                       Text="Буфер отката на секунду прервётся. Уже сохранённые клипы не пострадают." />
+                        </StackPanel>
+                        <Button x:Name="ApplyNowButton" Grid.Column="2" Style="{StaticResource AccentButton}" Margin="16,0,0,0" VerticalAlignment="Center" Click="OnApplyNowClick">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Margin="0,0,8,0" />
+                                <TextBlock Text="Применить сейчас" />
+                            </StackPanel>
+                        </Button>
+                        <Button Grid.Column="3" Style="{StaticResource CB.IconButton}" Margin="8,0,-8,0" ToolTip="Скрыть" Click="OnRestartBarClose">
+                            <ui:SymbolIcon Symbol="Dismiss24" FontSize="14" />
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <TextBlock x:Name="SecReplay" Style="{StaticResource SectionHeader}" Text="Откат" Margin="0,22,0,10" />
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon History24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader x:Name="ReplayHeader" Title="Буфер отката"
+                                                 Description="Последние секунды экрана всегда под рукой — сохрани их одной клавишей" />
+                    </ui:CardControl.Header>
+                    <ui:ToggleSwitch x:Name="ReplayToggle" Style="{StaticResource Toggle}" Click="OnReplayToggleClick" />
+                </ui:CardControl>
+
+                <ui:CardExpander x:Name="ReplayLengthExpander" Style="{StaticResource Expander}" Icon="{ui:SymbolIcon Timer24}" IsExpanded="True">
+                    <ui:CardExpander.Header>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <pages:SettingsRowHeader Title="Длина отката" Description="Сколько хранить в буфере. Сохранение мгновенное — без перекодирования" />
+                            <TextBlock x:Name="ReplayLengthValue" Grid.Column="1" Style="{StaticResource CB.Text.Body}" Foreground="{StaticResource CB.TextSecondary}"
+                                       VerticalAlignment="Center" Margin="16,0,16,0" Text="5 мин" />
+                        </Grid>
+                    </ui:CardExpander.Header>
+                    <StackPanel>
+                        <WrapPanel x:Name="ReplayChips" />
+                        <StackPanel x:Name="ReplayCustomPanel" Orientation="Horizontal" Margin="0,4,0,0" Visibility="Collapsed">
+                            <TextBlock Style="{StaticResource SubLabel}" Text="Своя длина" MinWidth="0" />
+                            <ui:NumberBox x:Name="ReplayCustomBox" Width="130" Minimum="0.25" Maximum="60" SmallChange="1" LargeChange="5" MaxDecimalPlaces="2"
+                                          ClearButtonEnabled="False" SpinButtonPlacementMode="Inline" ValueChanged="OnReplayCustomChanged" />
+                            <TextBlock Style="{StaticResource Unit}" Text="мин (до 60)" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <ui:SymbolIcon Symbol="HardDrive24" FontSize="16" Foreground="{StaticResource CB.TextTertiary}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="ReplayEstimateText" Style="{StaticResource CB.Text.Caption}" VerticalAlignment="Center" Text="≈ 750 МБ на диске" />
+                        </StackPanel>
+                    </StackPanel>
+                </ui:CardExpander>
+
+                <TextBlock x:Name="SecVideo" Style="{StaticResource SectionHeader}" Text="Видео" />
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon Desktop24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Монитор" Description="Какой экран записывать целиком — вместе с играми, браузером и рабочим столом" />
+                    </ui:CardControl.Header>
+                    <ComboBox x:Name="MonitorCombo" Style="{StaticResource Combo}" SelectionChanged="OnMonitorChanged" />
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon Gauge24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Качество" Description="Битрейт видео. Выше — чётче картинка и больше файл" />
+                    </ui:CardControl.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <StackPanel x:Name="VideoBitratePanel" Orientation="Horizontal" Visibility="Collapsed" Margin="0,0,12,0">
+                            <ui:NumberBox x:Name="VideoBitrateBox" Width="120" Minimum="1" Maximum="200" SmallChange="1" LargeChange="5" MaxDecimalPlaces="0"
+                                          ClearButtonEnabled="False" SpinButtonPlacementMode="Inline" ValueChanged="OnVideoBitrateChanged" />
+                            <TextBlock Style="{StaticResource Unit}" Text="Мбит/с" />
+                        </StackPanel>
+                        <ComboBox x:Name="QualityCombo" Style="{StaticResource Combo}" SelectionChanged="OnQualityChanged" />
+                    </StackPanel>
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon TopSpeed24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Частота кадров" Description="60 к/с — плавно и почти без нагрузки. 120–144 — для быстрых игр на мониторах с высокой герцовкой" />
+                    </ui:CardControl.Header>
+                    <ComboBox x:Name="FpsCombo" Style="{StaticResource Combo}" SelectionChanged="OnFpsChanged" />
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon ResizeVideo24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Разрешение" Description="Исходное — как на мониторе. Меньше — легче файл и нагрузка на видеокарту" />
+                    </ui:CardControl.Header>
+                    <ComboBox x:Name="ResolutionCombo" Style="{StaticResource Combo}" SelectionChanged="OnResolutionChanged" />
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon VideoSettings24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Кодировщик" Description="«Авто» выбирает лучший аппаратный: Intel Quick Sync, AMD AMF или NVIDIA NVENC. Процессор не нагружается" />
+                    </ui:CardControl.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:ProgressRing x:Name="EncoderSpinner" IsIndeterminate="True" Width="18" Height="18" Margin="0,0,12,0" Visibility="Collapsed" />
+                        <ComboBox x:Name="EncoderCombo" Style="{StaticResource Combo}" SelectionChanged="OnEncoderChanged" />
+                    </StackPanel>
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon Cursor24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Курсор" Description="Показывать указатель мыши в записи" />
+                    </ui:CardControl.Header>
+                    <ui:ToggleSwitch x:Name="CursorToggle" Style="{StaticResource Toggle}" Click="OnCursorToggleClick" />
+                </ui:CardControl>
+
+                <TextBlock x:Name="SecAudio" Style="{StaticResource SectionHeader}" Text="Звук" />
+
+                <ui:CardExpander Style="{StaticResource Expander}" Icon="{ui:SymbolIcon Speaker224}">
+                    <ui:CardExpander.Header>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <pages:SettingsRowHeader Title="Звук ПК" Description="Всё, что слышно из динамиков или наушников: игра, Discord, музыка" />
+                            <ui:ToggleSwitch x:Name="SystemAudioToggle" Grid.Column="1" Style="{StaticResource Toggle}" Margin="16,0,16,0" Click="OnSystemAudioToggleClick" />
+                        </Grid>
+                    </ui:CardExpander.Header>
+                    <Grid x:Name="SystemAudioPanel">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Style="{StaticResource SubLabel}" Text="Устройство" />
+                        <ComboBox x:Name="SystemDeviceCombo" Grid.Column="1" Style="{StaticResource Combo}" HorizontalAlignment="Left" MinWidth="320" SelectionChanged="OnSystemDeviceChanged" />
+                        <TextBlock Grid.Row="1" Style="{StaticResource SubLabel}" Text="Громкость" Margin="0,14,16,0" />
+                        <Grid Grid.Row="1" Grid.Column="1" Margin="0,14,0,0" MaxWidth="440" HorizontalAlignment="Left" Width="440">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="56" />
+                            </Grid.ColumnDefinitions>
+                            <Slider x:Name="SystemVolumeSlider" Minimum="0" Maximum="200" SmallChange="1" LargeChange="10" IsMoveToPointEnabled="True"
+                                    VerticalAlignment="Center" ValueChanged="OnSystemVolumeChanged" />
+                            <TextBlock x:Name="SystemVolumeText" Grid.Column="1" Style="{StaticResource CB.Text.Body}" TextAlignment="Right" VerticalAlignment="Center" Text="100 %" />
+                        </Grid>
+                    </Grid>
+                </ui:CardExpander>
+
+                <ui:CardExpander Style="{StaticResource Expander}" Icon="{ui:SymbolIcon Mic24}">
+                    <ui:CardExpander.Header>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <pages:SettingsRowHeader Title="Микрофон" Description="Твой голос отдельной дорожкой. Заглушить на лету — Alt+F8" x:Name="MicHeader" />
+                            <ui:ToggleSwitch x:Name="MicToggle" Grid.Column="1" Style="{StaticResource Toggle}" Margin="16,0,16,0" Click="OnMicToggleClick" />
+                        </Grid>
+                    </ui:CardExpander.Header>
+                    <Grid x:Name="MicPanel">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Style="{StaticResource SubLabel}" Text="Устройство" />
+                        <ComboBox x:Name="MicDeviceCombo" Grid.Column="1" Style="{StaticResource Combo}" HorizontalAlignment="Left" MinWidth="320" SelectionChanged="OnMicDeviceChanged" />
+                        <TextBlock Grid.Row="1" Style="{StaticResource SubLabel}" Text="Громкость" Margin="0,14,16,0" />
+                        <Grid Grid.Row="1" Grid.Column="1" Margin="0,14,0,0" HorizontalAlignment="Left" Width="440">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="56" />
+                            </Grid.ColumnDefinitions>
+                            <Slider x:Name="MicVolumeSlider" Minimum="0" Maximum="200" SmallChange="1" LargeChange="10" IsMoveToPointEnabled="True"
+                                    VerticalAlignment="Center" ValueChanged="OnMicVolumeChanged" />
+                            <TextBlock x:Name="MicVolumeText" Grid.Column="1" Style="{StaticResource CB.Text.Body}" TextAlignment="Right" VerticalAlignment="Center" Text="100 %" />
+                        </Grid>
+                    </Grid>
+                </ui:CardExpander>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon LayerDiagonal24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Отдельные дорожки"
+                                                 Description="Три дорожки в файле: микс, только звук ПК и только микрофон. Плееры и Discord играют микс, а в монтаже голос можно убрать или приглушить" />
+                    </ui:CardControl.Header>
+                    <ui:ToggleSwitch x:Name="TracksToggle" Style="{StaticResource Toggle}" Click="OnTracksToggleClick" />
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon SoundWaveCircle24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Битрейт звука" Description="AAC, на каждую дорожку. 192 кбит/с — прозрачное качество для игр и голоса" />
+                    </ui:CardControl.Header>
+                    <ComboBox x:Name="AudioBitrateCombo" Style="{StaticResource Combo}" SelectionChanged="OnAudioBitrateChanged" />
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon TimePicker24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Задержка звука" Description="Если звук отстаёт или опережает картинку. Плюс — звук позже, минус — раньше" />
+                    </ui:CardControl.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:NumberBox x:Name="AudioOffsetBox" Width="130" Minimum="-2000" Maximum="2000" SmallChange="10" LargeChange="50" MaxDecimalPlaces="0"
+                                      ClearButtonEnabled="False" SpinButtonPlacementMode="Inline" ValueChanged="OnAudioOffsetChanged" />
+                        <TextBlock Style="{StaticResource Unit}" Text="мс" />
+                    </StackPanel>
+                </ui:CardControl>
+
+                <TextBlock x:Name="SecHotkeys" Style="{StaticResource SectionHeader}" Text="Горячие клавиши" />
+                <TextBlock Style="{StaticResource Hint}" Text="Нажми на поле и введи сочетание. Esc — отмена, Backspace — очистить. Работают в любой игре и программе." />
+
+                <StackPanel x:Name="HotkeyRows" />
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon ArrowReset24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Сбросить по умолчанию" Description="Вернуть стандартные сочетания: Alt+F10 — сохранить откат, Alt+F9 — запись, Alt+F1 — скриншот" />
+                    </ui:CardControl.Header>
+                    <Button x:Name="ResetHotkeysButton" Style="{StaticResource FlatButton}" Content="Сбросить" Click="OnResetHotkeysClick" />
+                </ui:CardControl>
+
+                <TextBlock x:Name="SecFolder" Style="{StaticResource SectionHeader}" Text="Папка" />
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon Folder24}">
+                    <ui:CardControl.Header>
+                        <StackPanel VerticalAlignment="Center">
+                            <pages:SettingsRowHeader x:Name="FolderHeader" Title="Папка клипов" Description="…" />
+                            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                <ui:SymbolIcon Symbol="HardDrive24" FontSize="14" Foreground="{StaticResource CB.TextTertiary}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock x:Name="FolderFreeText" Style="{StaticResource CB.Text.Caption}" Foreground="{StaticResource CB.TextTertiary}" Text="Считаю свободное место…" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="OpenFolderButton" Style="{StaticResource FlatButton}" Margin="0,0,8,0" Click="OnOpenFolderClick">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" Margin="0,0,8,0" />
+                                <TextBlock Text="Открыть" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="ChangeFolderButton" Style="{StaticResource FlatButton}" Content="Изменить…" Click="OnChangeFolderClick" />
+                    </StackPanel>
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon Rename24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Имя приложения в названии файла" Description="Например: «Discord 2026-09-24 17-49-03.mp4» — сразу видно, откуда клип" />
+                    </ui:CardControl.Header>
+                    <ui:ToggleSwitch x:Name="AppNameToggle" Style="{StaticResource Toggle}" Click="OnAppNameToggleClick" />
+                </ui:CardControl>
+
+                <TextBlock x:Name="SecGeneral" Style="{StaticResource SectionHeader}" Text="Общие" />
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon Power24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Запускать вместе с Windows" Description="ClipBar стартует в трее при входе в систему, и буфер отката включается сразу" />
+                    </ui:CardControl.Header>
+                    <ui:ToggleSwitch x:Name="StartupToggle" Style="{StaticResource Toggle}" Click="OnStartupToggleClick" />
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon ArrowMinimize24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Запускать свёрнутым в трей" Description="Не показывать главное окно при запуске" />
+                    </ui:CardControl.Header>
+                    <ui:ToggleSwitch x:Name="MinimizedToggle" Style="{StaticResource Toggle}" Click="OnMinimizedToggleClick" />
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon Alert24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Уведомления" Description="Всплывающие сообщения «Клип сохранён» в углу экрана" />
+                    </ui:CardControl.Header>
+                    <ui:ToggleSwitch x:Name="NotificationsToggle" Style="{StaticResource Toggle}" Click="OnNotificationsToggleClick" />
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon MusicNote224}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Звуки" Description="Короткий сигнал при сохранении отката, начале и конце записи" />
+                    </ui:CardControl.Header>
+                    <ui:ToggleSwitch x:Name="SoundsToggle" Style="{StaticResource Toggle}" Click="OnSoundsToggleClick" />
+                </ui:CardControl>
+
+                <TextBlock x:Name="SecAbout" Style="{StaticResource SectionHeader}" Text="О программе" />
+
+                <Border Background="{StaticResource CB.Card}" BorderBrush="{StaticResource CB.Divider}" BorderThickness="1" CornerRadius="8" Padding="16,16" Margin="0,0,0,4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="52" Height="52" CornerRadius="12" Background="{StaticResource CB.Record}" VerticalAlignment="Center" Margin="0,0,16,0">
+                            <ui:SymbolIcon Symbol="Record24" Filled="True" FontSize="26" Foreground="White" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource CB.Text.Big}" FontSize="20" Text="ClipBar" VerticalAlignment="Bottom" />
+                                <TextBlock x:Name="VersionText" Style="{StaticResource CB.Text.Caption}" Margin="10,0,0,0" VerticalAlignment="Center" Text="Версия 1.0.0" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource CB.Text.Caption}" TextWrapping="Wrap" Margin="0,3,0,0"
+                                       Text="Лёгкая запись экрана с мгновенным откатом — как Game Bar, но для всего рабочего стола. Видео кодирует видеокарта, процессор почти не нагружается." />
+                            <TextBlock Style="{StaticResource CB.Text.Body}" Margin="0,6,0,0">
+                                <Run Text="by" Foreground="{StaticResource CB.TextSecondary}" />
+                                <Run Text="@lumaseller" Foreground="#FFFF6B7A" FontWeight="SemiBold" />
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon ArrowSync24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Обновления" Description="ClipBar сам скачивает новые версии с GitHub и ставит их при запуске" />
+                    </ui:CardControl.Header>
+                    <Button x:Name="CheckUpdatesButton" Style="{StaticResource FlatButton}" Click="OnCheckUpdatesClick" Content="Проверить сейчас" />
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon Code24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader x:Name="FfmpegHeader" Title="FFmpeg" Description="Определяю версию…" />
+                    </ui:CardControl.Header>
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon DeveloperBoard24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader x:Name="GpuHeader" Title="Видеокарта" Description="…" />
+                    </ui:CardControl.Header>
+                </ui:CardControl>
+
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon DocumentText24}">
+                    <ui:CardControl.Header>
+                        <pages:SettingsRowHeader Title="Журнал" Description="Если что-то пошло не так — в логах есть причина. Пригодятся при обращении за помощью" />
+                    </ui:CardControl.Header>
+                    <Button x:Name="OpenLogsButton" Style="{StaticResource FlatButton}" Click="OnOpenLogsClick">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" Margin="0,0,8,0" />
+                            <TextBlock Text="Открыть папку логов" />
+                        </StackPanel>
+                    </Button>
+                </ui:CardControl>
+
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</Page>

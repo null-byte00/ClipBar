@@ -1,0 +1,11 @@
+ClipBar uses FFmpeg (https://ffmpeg.org) as a separate program: tools\ffmpeg.exe and tools\ffprobe.exe.
+
+The bundled binaries are the "essentials" release build by Gyan Doshi (https://www.gyan.dev/ffmpeg/builds/),
+FFmpeg 9.0.2, configured with --enable-gpl --enable-version3 and therefore licensed under the
+GNU General Public License, version 3: https://www.gnu.org/licenses/gpl-3.0.html
+
+FFmpeg source code: https://ffmpeg.org/download.html (and https://github.com/FFmpeg/FFmpeg).
+The exact build configuration is printed by `ffmpeg -version`; the build's sources and scripts are
+linked from https://www.gyan.dev/ffmpeg/builds/.
+
+FFmpeg is a trademark of Fabrice Bellard, originator of the FFmpeg project.

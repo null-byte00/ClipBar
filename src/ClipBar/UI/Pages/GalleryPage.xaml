@@ -1,0 +1,364 @@
+<Page x:Class="ClipBar.UI.Pages.GalleryPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:ctl="clr-namespace:ClipBar.UI.Controls"
+      xmlns:core="clr-namespace:ClipBar.Core"
+      Title="Коллекция"
+      Background="Transparent"
+      FontFamily="{StaticResource CB.Font}"
+      Foreground="{StaticResource CB.TextPrimary}"
+      Focusable="False"
+      Loaded="Page_Loaded" Unloaded="Page_Unloaded">
+
+    <Page.Resources>
+        <ctl:GalleryDurationConverter x:Key="Duration" />
+        <ctl:GalleryMetaConverter x:Key="Meta" />
+        <ctl:GalleryDayGroupConverter x:Key="DayGroup" />
+        <ctl:GalleryVisibleWhenConverter x:Key="VisibleWhen" />
+
+        <CollectionViewSource x:Key="ClipsView" />
+
+        <Style x:Key="Pill" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{StaticResource CB.TextSecondary}" />
+            <Setter Property="FontFamily" Value="{StaticResource CB.Font}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" Background="Transparent" BorderBrush="Transparent" BorderThickness="1"
+                                CornerRadius="16" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlHover}" />
+                                <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.Control}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource CB.WidgetBorder}" />
+                                <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <ContextMenu x:Key="ClipMenu" Opened="ClipMenu_Opened">
+            <MenuItem Header="Открыть в редакторе" Click="Menu_Edit" InputGestureText="Enter">
+                <MenuItem.Icon><ui:SymbolIcon Symbol="Cut24" /></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Воспроизвести" Click="Menu_Play">
+                <MenuItem.Icon><ui:SymbolIcon Symbol="Play24" /></MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="Показать в папке" Click="Menu_ShowInFolder">
+                <MenuItem.Icon><ui:SymbolIcon Symbol="FolderOpen24" /></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Переименовать" Click="Menu_Rename" InputGestureText="F2">
+                <MenuItem.Icon><ui:SymbolIcon Symbol="Rename24" /></MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="Удалить" Click="Menu_Delete" InputGestureText="Del">
+                <MenuItem.Icon><ui:SymbolIcon Symbol="Delete24" /></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+
+        <DataTemplate x:Key="ClipCard" DataType="{x:Type core:ClipInfo}">
+            <StackPanel Width="240">
+                <Grid Width="240" Height="135">
+                    <Rectangle RadiusX="8" RadiusY="8" Fill="#FF161616" />
+                    <Rectangle x:Name="Thumb" RadiusX="8" RadiusY="8"
+                               ctl:GalleryThumb.DecodeWidth="320"
+                               ctl:GalleryThumb.SourcePath="{Binding ThumbnailPath}"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
+                    <ui:SymbolIcon x:Name="Placeholder" Symbol="VideoClip24" FontSize="30"
+                                   Foreground="{StaticResource CB.TextTertiary}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Visibility="{Binding (ctl:GalleryThumb.HasImage), ElementName=Thumb, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}" />
+                    <Rectangle RadiusX="8" RadiusY="8" IsHitTestVisible="False">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0.55" EndPoint="0,1">
+                                <GradientStop Color="#00000000" Offset="0" />
+                                <GradientStop Color="#66000000" Offset="1" />
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                    <Border x:Name="PlayOverlay" CornerRadius="8" Background="#33000000" Opacity="0" IsHitTestVisible="False">
+                        <Border Width="46" Height="46" CornerRadius="23" Background="#F2FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <ui:SymbolIcon Symbol="Play24" Filled="True" FontSize="20" Foreground="#FF1B1B1B" Margin="3,0,0,0" />
+                        </Border>
+                    </Border>
+                    <Border x:Name="ShotBadge" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="6,3"
+                            Background="#B3000000" CornerRadius="4" Visibility="Collapsed" IsHitTestVisible="False">
+                        <ui:SymbolIcon Symbol="Image24" FontSize="14" Foreground="White" />
+                    </Border>
+                    <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="8" Padding="6,2"
+                            Background="#B3000000" CornerRadius="4" IsHitTestVisible="False"
+                            Visibility="{Binding Duration, Converter={StaticResource VisibleWhen}}">
+                        <TextBlock Text="{Binding Duration, Converter={StaticResource Duration}}" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="White" FontFamily="{StaticResource CB.Font}" />
+                    </Border>
+                </Grid>
+                <TextBlock Text="{Binding Title}" Margin="2,10,2,0" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{StaticResource CB.TextPrimary}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FileName}" />
+                <TextBlock Text="{Binding Converter={StaticResource Meta}}" Margin="2,3,2,0" FontSize="12"
+                           Foreground="{StaticResource CB.TextTertiary}" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter TargetName="PlayOverlay" Property="Opacity" Value="1" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsScreenshot}" Value="True">
+                    <Setter TargetName="Placeholder" Property="Symbol" Value="Image24" />
+                    <Setter TargetName="PlayOverlay" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="ShotBadge" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <Style x:Key="CardContainer" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="0,0,10,10" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="ContextMenu" Value="{StaticResource ClipMenu}" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <EventSetter Event="MouseDoubleClick" Handler="Card_DoubleClick" />
+            <EventSetter Event="PreviewMouseRightButtonDown" Handler="Card_RightDown" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="2"
+                                CornerRadius="14" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.CardHover}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.Card}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource CB.Accent}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DayGroupContainer" TargetType="GroupItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GroupItem">
+                        <StackPanel Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal" Margin="8,6,0,10">
+                                <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold" FontFamily="{StaticResource CB.FontDisplay}"
+                                           Foreground="{StaticResource CB.TextPrimary}" VerticalAlignment="Bottom" />
+                                <TextBlock Text="{Binding ItemCount}" FontSize="13" Margin="8,0,0,0" VerticalAlignment="Bottom"
+                                           Foreground="{StaticResource CB.TextTertiary}" />
+                            </StackPanel>
+                            <ItemsPresenter />
+                        </StackPanel>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PaneAction" TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Background" Value="{StaticResource CB.Control}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CB.WidgetBorder}" />
+            <Setter Property="MouseOverBackground" Value="{StaticResource CB.ControlHover}" />
+            <Setter Property="PressedBackground" Value="{StaticResource CB.ControlPressed}" />
+            <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+
+        <Style x:Key="MetaText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{StaticResource CB.TextSecondary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+    </Page.Resources>
+
+    <Grid Margin="28,20,28,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <StackPanel>
+                <TextBlock Text="Коллекция" Style="{StaticResource CB.Text.Big}" />
+                <TextBlock x:Name="CountText" Style="{StaticResource CB.Text.Caption}" Foreground="{StaticResource CB.TextTertiary}" Margin="1,4,0,0" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <ui:Button x:Name="RefreshButton" Click="Refresh_Click" ToolTip="Обновить" Padding="8,0" Height="36" Width="36"
+                           Icon="{ui:SymbolIcon ArrowClockwise24}" Appearance="Secondary" Background="Transparent" BorderBrush="Transparent" Margin="0,0,8,0" />
+                <ui:Button Content="Открыть папку" Click="OpenFolder_Click" Height="36" Padding="14,0"
+                           Icon="{ui:SymbolIcon FolderOpen24}" Appearance="Secondary"
+                           Background="{StaticResource CB.Control}" BorderBrush="{StaticResource CB.WidgetBorder}"
+                           MouseOverBackground="{StaticResource CB.ControlHover}" PressedBackground="{StaticResource CB.ControlPressed}" />
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="0,18,0,14">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <RadioButton x:Name="FilterAll" Content="Все" Style="{StaticResource Pill}" IsChecked="True" Checked="Filter_Checked" />
+                <RadioButton x:Name="FilterClips" Content="Клипы" Style="{StaticResource Pill}" Checked="Filter_Checked" />
+                <RadioButton x:Name="FilterShots" Content="Скриншоты" Style="{StaticResource Pill}" Checked="Filter_Checked" />
+            </StackPanel>
+            <ui:TextBox x:Name="SearchBox" Width="280" HorizontalAlignment="Right" VerticalAlignment="Center"
+                        PlaceholderText="Поиск по названию" Icon="{ui:SymbolIcon Search24}" IconPlacement="Left"
+                        ClearButtonEnabled="True" TextChanged="Search_TextChanged" KeyDown="Search_KeyDown" />
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <ListBox x:Name="List" Grid.Column="0" Style="{x:Null}"
+                     ItemsSource="{Binding Source={StaticResource ClipsView}}"
+                     ItemTemplate="{StaticResource ClipCard}"
+                     ItemContainerStyle="{StaticResource CardContainer}"
+                     Background="Transparent" BorderThickness="0" Padding="0" Margin="-8,0,0,0"
+                     SelectionMode="Single" SelectionChanged="List_SelectionChanged" KeyDown="List_KeyDown"
+                     FocusVisualStyle="{x:Null}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.CanContentScroll="True"
+                     ScrollViewer.PanningMode="VerticalOnly"
+                     VirtualizingPanel.IsVirtualizing="True"
+                     VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                     VirtualizingPanel.VirtualizationMode="Recycling"
+                     VirtualizingPanel.ScrollUnit="Pixel"
+                     VirtualizingPanel.CacheLengthUnit="Pixel"
+                     VirtualizingPanel.CacheLength="400,400">
+                <ListBox.GroupStyle>
+                    <GroupStyle ContainerStyle="{StaticResource DayGroupContainer}">
+                        <GroupStyle.Panel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" Margin="8,0,0,0" />
+                            </ItemsPanelTemplate>
+                        </GroupStyle.Panel>
+                    </GroupStyle>
+                </ListBox.GroupStyle>
+            </ListBox>
+
+            <StackPanel x:Name="EmptyState" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="440" Visibility="Collapsed" Margin="0,0,0,40">
+                <Border Width="104" Height="104" CornerRadius="52" Background="{StaticResource CB.Card}" BorderBrush="{StaticResource CB.Divider}" BorderThickness="1" HorizontalAlignment="Center">
+                    <ui:SymbolIcon Symbol="VideoClipMultiple24" FontSize="44" Foreground="{StaticResource CB.Accent}" />
+                </Border>
+                <TextBlock Text="Здесь пока пусто" FontSize="22" FontWeight="SemiBold" FontFamily="{StaticResource CB.FontDisplay}" HorizontalAlignment="Center" Margin="0,22,0,0" />
+                <TextBlock x:Name="EmptyHint" TextWrapping="Wrap" TextAlignment="Center" FontSize="13" LineHeight="20"
+                           Foreground="{StaticResource CB.TextSecondary}" Margin="0,8,0,0"
+                           Text="Нажми Alt+F10, чтобы сохранить последние минуты — клип сразу появится в коллекции." />
+                <ui:Button Content="Открыть папку" Click="OpenFolder_Click" Icon="{ui:SymbolIcon FolderOpen24}" Appearance="Secondary"
+                           HorizontalAlignment="Center" Margin="0,22,0,0" Height="36" Padding="14,0"
+                           Background="{StaticResource CB.Control}" BorderBrush="{StaticResource CB.WidgetBorder}"
+                           MouseOverBackground="{StaticResource CB.ControlHover}" PressedBackground="{StaticResource CB.ControlPressed}" />
+            </StackPanel>
+
+            <StackPanel x:Name="NotFoundState" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="400" Visibility="Collapsed" Margin="0,0,0,40">
+                <ui:SymbolIcon Symbol="Search24" FontSize="40" Foreground="{StaticResource CB.TextTertiary}" HorizontalAlignment="Center" />
+                <TextBlock Text="Ничего не найдено" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,14,0,0" />
+                <TextBlock Text="Попробуй изменить запрос или выбрать другой фильтр." TextWrapping="Wrap" TextAlignment="Center" FontSize="13"
+                           Foreground="{StaticResource CB.TextSecondary}" Margin="0,6,0,0" />
+                <ui:Button Content="Сбросить фильтры" Click="ResetFilters_Click" Appearance="Secondary" HorizontalAlignment="Center" Margin="0,18,0,0" Height="34" Padding="14,0"
+                           Background="{StaticResource CB.Control}" BorderBrush="{StaticResource CB.WidgetBorder}"
+                           MouseOverBackground="{StaticResource CB.ControlHover}" PressedBackground="{StaticResource CB.ControlPressed}" />
+            </StackPanel>
+
+            <Border x:Name="DetailPane" Grid.Column="1" Width="372" Margin="20,0,0,0" Visibility="Collapsed"
+                    Background="{StaticResource CB.Card}" BorderBrush="{StaticResource CB.Divider}" BorderThickness="1"
+                    CornerRadius="{StaticResource CB.Radius.Widget}" Padding="16" ContextMenu="{StaticResource ClipMenu}">
+                <DockPanel LastChildFill="True">
+
+                    <StackPanel DockPanel.Dock="Bottom">
+                        <ui:Button Content="Открыть в редакторе" Click="Edit_Click" Appearance="Primary" HorizontalAlignment="Stretch"
+                                   Height="38" FontWeight="SemiBold" Icon="{ui:SymbolIcon Cut24}" CornerRadius="6" Margin="0,4,0,10" />
+                        <UniformGrid Columns="2">
+                            <ui:Button Style="{StaticResource PaneAction}" Content="Воспроизвести" Icon="{ui:SymbolIcon Play24}" Click="PlayExternal_Click" Margin="0,0,3,6" />
+                            <ui:Button Style="{StaticResource PaneAction}" Content="Показать в папке" Icon="{ui:SymbolIcon FolderOpen24}" Click="ShowInFolder_Click" Margin="3,0,0,6" />
+                            <ui:Button Style="{StaticResource PaneAction}" Content="Переименовать" Icon="{ui:SymbolIcon Rename24}" Click="Rename_Click" Margin="0,0,3,0" />
+                            <ui:Button Style="{StaticResource PaneAction}" Content="Удалить" Icon="{ui:SymbolIcon Delete24}" Click="Delete_Click" Margin="3,0,0,0"
+                                       Foreground="{StaticResource CB.Error}" />
+                        </UniformGrid>
+                    </StackPanel>
+
+                    <Grid DockPanel.Dock="Top" x:Name="PreviewHost" Height="190" Background="Transparent" MouseLeftButtonUp="Preview_Click" Cursor="Hand">
+                        <Rectangle RadiusX="8" RadiusY="8" Fill="#FF141414" />
+                        <Rectangle x:Name="PreviewImage" RadiusX="8" RadiusY="8" ctl:GalleryThumb.DecodeWidth="720"
+                                   ctl:GalleryThumb.SourcePath="{Binding ThumbnailPath}" RenderOptions.BitmapScalingMode="HighQuality" />
+                        <Border x:Name="VideoHost" Background="Black" Visibility="Collapsed" SizeChanged="VideoHost_SizeChanged">
+                            <MediaElement x:Name="Player" LoadedBehavior="Manual" UnloadedBehavior="Manual" Stretch="Uniform"
+                                          ScrubbingEnabled="True" MediaOpened="Player_MediaOpened" MediaEnded="Player_MediaEnded" MediaFailed="Player_MediaFailed" />
+                        </Border>
+                        <ui:SymbolIcon x:Name="PreviewPlaceholder" Symbol="VideoClip24" FontSize="36" Foreground="{StaticResource CB.TextTertiary}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="{Binding (ctl:GalleryThumb.HasImage), ElementName=PreviewImage, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}" />
+                        <Border x:Name="BigPlay" Width="56" Height="56" CornerRadius="28" Background="#F2FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                            <ui:SymbolIcon x:Name="BigPlayIcon" Symbol="Play24" Filled="True" FontSize="24" Foreground="#FF1B1B1B" Margin="3,0,0,0" />
+                        </Border>
+                    </Grid>
+
+                    <Grid DockPanel.Dock="Top" x:Name="Transport" Margin="0,8,0,0" Visibility="Collapsed">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Slider x:Name="Seek" Minimum="0" Maximum="1" VerticalAlignment="Center" IsMoveToPointEnabled="True"
+                                PreviewMouseDown="Seek_MouseDown" PreviewMouseUp="Seek_MouseUp" ValueChanged="Seek_ValueChanged" />
+                        <TextBlock x:Name="TimeText" Grid.Column="1" Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                   Foreground="{StaticResource CB.TextSecondary}" Text="00:00 / 00:00" />
+                    </Grid>
+
+                    <Grid DockPanel.Dock="Top" Margin="0,14,0,0" MinHeight="32">
+                        <TextBlock x:Name="DetailTitle" Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"
+                                   MaxHeight="44" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip="{Binding FileName}" />
+                        <ui:TextBox x:Name="RenameBox" Visibility="Collapsed" FontSize="14" ClearButtonEnabled="False"
+                                    KeyDown="RenameBox_KeyDown" LostKeyboardFocus="RenameBox_LostFocus" />
+                    </Grid>
+
+                    <StackPanel DockPanel.Dock="Top" Margin="2,12,0,0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon Symbol="Calendar24" FontSize="16" Foreground="{StaticResource CB.TextTertiary}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="MetaDate" Style="{StaticResource MetaText}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon x:Name="MetaKindIcon" Symbol="Timer24" FontSize="16" Foreground="{StaticResource CB.TextTertiary}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="MetaKind" Style="{StaticResource MetaText}" />
+                        </StackPanel>
+                        <StackPanel x:Name="MetaAudioRow" Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon Symbol="Speaker224" FontSize="16" Foreground="{StaticResource CB.TextTertiary}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="MetaAudio" Style="{StaticResource MetaText}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="DocumentOnePage24" FontSize="16" Foreground="{StaticResource CB.TextTertiary}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="MetaFile" Style="{StaticResource MetaText}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border />
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Page>

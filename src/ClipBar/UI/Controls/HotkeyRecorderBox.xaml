@@ -1,0 +1,120 @@
+<UserControl x:Class="ClipBar.UI.Controls.HotkeyRecorderBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="260"
+             Focusable="True" IsTabStop="True" FocusVisualStyle="{x:Null}"
+             Cursor="Hand" Height="36" MinWidth="180"
+             FontFamily="{DynamicResource CB.Font}"
+             SnapsToDevicePixels="True" UseLayoutRounding="True">
+    <UserControl.Resources>
+        <Style x:Key="ChipShell" TargetType="Border">
+            <Setter Property="Background" Value="#FF161616" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Padding" Value="0,0,0,2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="ChipFace" TargetType="Border">
+            <Setter Property="Background" Value="#FF4A4A4A" />
+            <Setter Property="BorderBrush" Value="#38FFFFFF" />
+            <Setter Property="BorderThickness" Value="1,1,1,0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="7,1,7,2" />
+            <Setter Property="MinWidth" Value="24" />
+        </Style>
+        <Style x:Key="ChipText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{DynamicResource CB.Font}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource CB.TextPrimary}" />
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="GhostChipShell" TargetType="Border" BasedOn="{StaticResource ChipShell}">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style x:Key="GhostChipFace" TargetType="Border" BasedOn="{StaticResource ChipFace}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="#40FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style x:Key="GhostChipText" TargetType="TextBlock" BasedOn="{StaticResource ChipText}">
+            <Setter Property="Foreground" Value="{DynamicResource CB.TextTertiary}" />
+        </Style>
+        <Style x:Key="ChipPlus" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{DynamicResource CB.Font}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource CB.TextTertiary}" />
+            <Setter Property="Margin" Value="5,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="ClearButton" TargetType="Button">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Foreground" Value="{DynamicResource CB.TextTertiary}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource CB.Radius.Small}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CB.ControlHover}" />
+                                <Setter Property="Foreground" Value="{DynamicResource CB.TextPrimary}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CB.ControlPressed}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Border x:Name="Glow" Margin="-1" CornerRadius="8" BorderThickness="2" Opacity="0"
+                BorderBrush="{DynamicResource CB.Accent}" IsHitTestVisible="False">
+            <Border.Effect>
+                <BlurEffect Radius="7" />
+            </Border.Effect>
+        </Border>
+
+        <Border x:Name="Root" Background="{DynamicResource CB.Control}" BorderBrush="{DynamicResource CB.WidgetBorder}"
+                BorderThickness="1" CornerRadius="{DynamicResource CB.Radius.Control}" Padding="10,0,5,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel x:Name="ChipsPanel" Orientation="Horizontal" VerticalAlignment="Center" ClipToBounds="True" />
+                <TextBlock x:Name="Placeholder" Text="Не назначено" FontSize="13" VerticalAlignment="Center"
+                           Foreground="{DynamicResource CB.TextTertiary}" TextTrimming="CharacterEllipsis" />
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
+                    <TextBlock x:Name="EscHint" Text="Esc — отмена" FontSize="11" VerticalAlignment="Center" Margin="0,0,5,0"
+                               Foreground="{DynamicResource CB.TextTertiary}" Visibility="Collapsed" />
+                    <ui:SymbolIcon x:Name="ConflictIcon" Symbol="Warning16" FontSize="16" Margin="0,0,7,0"
+                                   Foreground="{DynamicResource CB.Error}" Visibility="Collapsed" />
+                    <Button x:Name="ClearButton" Style="{StaticResource ClearButton}" ToolTip="Очистить" Click="ClearButton_Click">
+                        <ui:SymbolIcon Symbol="Dismiss16" FontSize="14" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border x:Name="Underline" Height="2" VerticalAlignment="Bottom" Margin="1,0,1,1" CornerRadius="0,0,5,5"
+                Background="{DynamicResource CB.Accent}" Visibility="Collapsed" IsHitTestVisible="False" />
+
+        <Border x:Name="FocusRing" Margin="-3" CornerRadius="9" BorderThickness="2"
+                BorderBrush="{DynamicResource CB.TextPrimary}" Visibility="Collapsed" IsHitTestVisible="False" />
+    </Grid>
+</UserControl>

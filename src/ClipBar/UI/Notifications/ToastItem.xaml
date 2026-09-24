@@ -1,0 +1,50 @@
+<UserControl x:Class="ClipBar.UI.Notifications.ToastItem"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             Width="368" Margin="14,5,14,5" Cursor="Arrow"
+             FontFamily="{StaticResource CB.Font}"
+             RenderTransformOrigin="0.5,0.5">
+    <UserControl.RenderTransform>
+        <TranslateTransform x:Name="Slide" X="56" />
+    </UserControl.RenderTransform>
+
+    <Border x:Name="Panel" Style="{StaticResource CB.WidgetPanel}" Padding="14,12,10,12"
+            MouseLeftButtonUp="OnBodyClick">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="34" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Grid Width="28" Height="28" VerticalAlignment="Top" Margin="0,0,0,0">
+                <ui:SymbolIcon x:Name="KindIcon" FontSize="26" Filled="True" Symbol="Info24"
+                               Foreground="{StaticResource CB.Accent}" />
+                <Grid x:Name="RecordDot" Visibility="Collapsed">
+                    <Ellipse x:Name="RecordPulse" Width="26" Height="26" Fill="{StaticResource CB.Record}" Opacity="0.28"
+                             RenderTransformOrigin="0.5,0.5">
+                        <Ellipse.RenderTransform>
+                            <ScaleTransform x:Name="PulseScale" ScaleX="1" ScaleY="1" />
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+                    <Ellipse Width="12" Height="12" Fill="{StaticResource CB.Record}" />
+                </Grid>
+            </Grid>
+
+            <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center">
+                <TextBlock x:Name="TitleText" Style="{StaticResource CB.Text.Title}" TextTrimming="CharacterEllipsis" />
+                <TextBlock x:Name="MessageText" Style="{StaticResource CB.Text.Caption}" TextWrapping="Wrap"
+                           MaxHeight="34" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                <TextBlock x:Name="HintText" Style="{StaticResource CB.Text.Caption}" Margin="0,5,0,0"
+                           Foreground="{StaticResource CB.Accent}" Text="Открыть в редакторе" Visibility="Collapsed" />
+            </StackPanel>
+
+            <Button x:Name="CloseButton" Grid.Column="2" Style="{StaticResource CB.IconButton}"
+                    Width="28" Height="28" VerticalAlignment="Top" Margin="0,-4,0,0" Click="OnCloseClick"
+                    ToolTip="Закрыть">
+                <ui:SymbolIcon Symbol="Dismiss16" FontSize="14" />
+            </Button>
+        </Grid>
+    </Border>
+</UserControl>

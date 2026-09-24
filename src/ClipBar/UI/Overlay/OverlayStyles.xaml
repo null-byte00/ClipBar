@@ -1,0 +1,223 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="Ov.SelectedRow" Color="#14FFFFFF" />
+    <SolidColorBrush x:Key="Ov.Tile" Color="#FF2A2A2A" />
+    <SolidColorBrush x:Key="Ov.Badge" Color="#B3000000" />
+    <SolidColorBrush x:Key="Ov.Graph" Color="#0DFFFFFF" />
+
+    <Style x:Key="Ov.Pill" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource CB.Widget}" />
+        <Setter Property="BorderBrush" Value="{StaticResource CB.WidgetBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="23" />
+        <Setter Property="Effect" Value="{StaticResource CB.Shadow}" />
+        <Setter Property="Padding" Value="6,0" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style x:Key="Ov.Separator" TargetType="Rectangle">
+        <Setter Property="Width" Value="1" />
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Fill" Value="{StaticResource CB.Divider}" />
+        <Setter Property="Margin" Value="6,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="Ov.BarToggle" TargetType="ToggleButton">
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Margin" Value="1,0" />
+        <Setter Property="Foreground" Value="{StaticResource CB.TextSecondary}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="ToolTipService.InitialShowDelay" Value="350" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Grid>
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="{StaticResource CB.Radius.Control}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <Rectangle x:Name="Ind" Width="16" Height="2" RadiusX="1" RadiusY="1" Fill="{StaticResource CB.Accent}"
+                                   VerticalAlignment="Bottom" Margin="0,0,0,2" Visibility="Collapsed" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlHover}" />
+                            <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlPressed}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Ind" Property="Visibility" Value="Visible" />
+                            <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Ov.BarButton" TargetType="Button" BasedOn="{StaticResource CB.IconButton}">
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="ToolTipService.InitialShowDelay" Value="350" />
+    </Style>
+
+    <Style x:Key="Ov.HeaderButton" TargetType="Button" BasedOn="{StaticResource CB.IconButton}">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="ToolTipService.InitialShowDelay" Value="350" />
+    </Style>
+
+    <Style x:Key="Ov.HeaderToggle" TargetType="ToggleButton">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Foreground" Value="{StaticResource CB.TextSecondary}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="ToolTipService.InitialShowDelay" Value="350" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="{StaticResource CB.Radius.Small}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlHover}" />
+                            <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlPressed}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource CB.Accent}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Ov.MuteToggle" TargetType="ToggleButton">
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+        <Setter Property="Background" Value="{StaticResource CB.Control}" />
+        <Setter Property="BorderBrush" Value="{StaticResource CB.WidgetBorder}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="ToolTipService.InitialShowDelay" Value="350" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1" CornerRadius="{StaticResource CB.Radius.Control}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlHover}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.Record}" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.RecordHover}" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Ov.MetricRow" TargetType="RadioButton">
+        <Setter Property="Height" Value="46" />
+        <Setter Property="Margin" Value="0,0,0,2" />
+        <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="{StaticResource CB.Radius.Small}" Padding="10,0,8,0">
+                        <Grid>
+                            <Rectangle x:Name="Bar" Width="3" RadiusX="1.5" RadiusY="1.5" Fill="{StaticResource CB.Accent}"
+                                       HorizontalAlignment="Left" Margin="-10,10,0,10" Visibility="Collapsed" />
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlHover}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Ov.SelectedRow}" />
+                            <Setter TargetName="Bar" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Ov.TileButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource CB.TextPrimary}" />
+        <Setter Property="Padding" Value="4" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="ToolTipService.InitialShowDelay" Value="500" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="{StaticResource CB.Radius.Control}" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlHover}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlPressed}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Ov.Link" TargetType="Hyperlink">
+        <Setter Property="Foreground" Value="{StaticResource CB.Accent}" />
+        <Setter Property="TextDecorations" Value="{x:Null}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="TextDecorations" Value="Underline" />
+                <Setter Property="Foreground" Value="{StaticResource CB.Accent}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="Ov.ButtonCaption" TargetType="TextBlock" BasedOn="{StaticResource CB.Text.Caption}">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{StaticResource CB.TextTertiary}" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="Width" Value="56" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+</ResourceDictionary>

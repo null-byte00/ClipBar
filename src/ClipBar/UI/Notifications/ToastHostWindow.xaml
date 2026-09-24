@@ -1,0 +1,11 @@
+<Window x:Class="ClipBar.UI.Notifications.ToastHostWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ClipBar — уведомления"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" ShowInTaskbar="False" ShowActivated="False" Topmost="True"
+        SizeToContent="WidthAndHeight" Focusable="False"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType">
+    <StackPanel x:Name="Stack" Orientation="Vertical" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="6" />
+</Window>

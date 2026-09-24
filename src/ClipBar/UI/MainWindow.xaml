@@ -1,0 +1,61 @@
+<ui:FluentWindow x:Class="ClipBar.UI.MainWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:pages="clr-namespace:ClipBar.UI.Pages"
+                 Title="ClipBar"
+                 Width="1120" Height="740" MinWidth="960" MinHeight="620"
+                 WindowStartupLocation="CenterScreen"
+                 WindowBackdropType="Mica"
+                 WindowCornerPreference="Round"
+                 ExtendsContentIntoTitleBar="True"
+                 Icon="pack://application:,,,/Assets/clipbar.ico"
+                 FontFamily="{StaticResource CB.Font}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar x:Name="TitleBar" Grid.Row="0" Title="ClipBar  ·  by @lumaseller"
+                     CloseWindowByDoubleClickOnIcon="False">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="pack://application:,,,/Assets/clipbar.png" Width="18" Height="18" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+
+        <ui:NavigationView x:Name="Nav" Grid.Row="1"
+                           PaneDisplayMode="Left"
+                           IsPaneOpen="True"
+                           OpenPaneLength="212"
+                           IsPaneToggleVisible="False"
+                           IsBackButtonVisible="Collapsed"
+                           TransitionDuration="160">
+            <ui:NavigationView.MenuItems>
+                <ui:NavigationViewItem Content="Главная" TargetPageTag="home"
+                                       TargetPageType="{x:Type pages:HomePage}"
+                                       NavigationCacheMode="Required">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="Home24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Коллекция" TargetPageTag="gallery"
+                                       TargetPageType="{x:Type pages:GalleryPage}"
+                                       NavigationCacheMode="Required">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="ImageMultiple24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+            </ui:NavigationView.MenuItems>
+            <ui:NavigationView.FooterMenuItems>
+                <ui:NavigationViewItem Content="Настройки" TargetPageTag="settings"
+                                       TargetPageType="{x:Type pages:SettingsPage}"
+                                       NavigationCacheMode="Required">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="Settings24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+            </ui:NavigationView.FooterMenuItems>
+        </ui:NavigationView>
+    </Grid>
+</ui:FluentWindow>

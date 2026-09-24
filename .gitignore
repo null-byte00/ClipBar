@@ -1,0 +1,21 @@
+# build output
+bin/
+obj/
+artifacts/
+dist/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+
+# FFmpeg binaries are ~100 MB each (over GitHub's file limit) — run tools/get-ffmpeg.ps1
+tools/*.exe
+
+# original scaffold, not part of the app
+.skeleton/
+
+# stray files
+src/ClipBar/-nologo
+*.log
