@@ -83,13 +83,6 @@ public partial class OverlayWindow : Window, IOverlayHost
 
             (_bounds, _) = OverlayNative.GetMonitorUnderCursor();
             new WindowInteropHelper(this).EnsureHandle();
-
-            // Впереди полноэкранная/безрамочная игра? Тогда не активируем окно и не воруем
-            // передний план — иначе игра (Minecraft F11 и т.п.) сворачивается. Оверлей всё равно
-            // топ-мост и ляжет поверх; закрыть можно тем же Alt+Z или кликом.
-            var overGame = _prevForeground != IntPtr.Zero && OverlayNative.IsFullscreen(_prevForeground);
-            OverlayNative.SetNoActivate(_hwnd, overGame);
-
             ApplyBounds();
 
             EnsureWidgets();
@@ -99,19 +92,10 @@ public partial class OverlayWindow : Window, IOverlayHost
             Show();
             ApplyBounds();
 
-            if (!overGame)
-            {
-                Activate();
-                OverlayNative.ForceForeground(_hwnd);
-                Root.Focus();
-                Keyboard.Focus(Root);
-            }
-            else
-            {
-                OverlayNative.SetWindowPos(_hwnd, OverlayNative.HWND_TOPMOST, _bounds.Left, _bounds.Top,
-                    _bounds.Width, _bounds.Height, OverlayNative.SWP_NOACTIVATE | OverlayNative.SWP_SHOWWINDOW);
-                Root.Focus();
-            }
+            Activate();
+            OverlayNative.ForceForeground(_hwnd);
+            Root.Focus();
+            Keyboard.Focus(Root);
 
             if (AppServices.Engine is { } engine) engine.StateChanged += OnEngineStateChanged;
             ActivateWidget(_audio!);

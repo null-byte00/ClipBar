@@ -110,26 +110,6 @@ internal static partial class OverlayNative
         return (mi.rcMonitor, scale);
     }
 
-    // Окно занимает весь монитор (полноэкранная/безрамочная игра) — тогда оверлей
-    // не должен забирать передний план, иначе игра сворачивается.
-    public static bool IsFullscreen(IntPtr hWnd)
-    {
-        if (hWnd == IntPtr.Zero || !GetWindowRect(hWnd, out var w)) return false;
-        var (mon, _) = GetMonitorOfWindow(hWnd);
-        const int tol = 2;
-        return Math.Abs(w.Left - mon.Left) <= tol && Math.Abs(w.Top - mon.Top) <= tol &&
-               Math.Abs(w.Right - mon.Right) <= tol && Math.Abs(w.Bottom - mon.Bottom) <= tol;
-    }
-
-    // Включает/выключает WS_EX_NOACTIVATE: с ним окно не активируется при показе,
-    // поэтому полноэкранная игра не теряет передний план и не сворачивается.
-    public static void SetNoActivate(IntPtr hWnd, bool on)
-    {
-        var ex = GetWindowLongPtr(hWnd, GWL_EXSTYLE).ToInt64();
-        var next = on ? ex | WS_EX_NOACTIVATE : ex & ~(long)WS_EX_NOACTIVATE;
-        if (next != ex) SetWindowLongPtr(hWnd, GWL_EXSTYLE, new IntPtr(next));
-    }
-
     public static void ForceForeground(IntPtr hWnd)
     {
         if (hWnd == IntPtr.Zero) return;
