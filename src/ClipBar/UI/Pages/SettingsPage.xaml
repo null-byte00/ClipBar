@@ -460,7 +460,7 @@
 
                 <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon MusicNote224}">
                     <ui:CardControl.Header>
-                        <pages:SettingsRowHeader Title="Звуки" Description="Короткий сигнал при сохранении отката, начале и конце записи" />
+                        <pages:SettingsRowHeader Title="Звуки" Description="Короткий сигнал при сохранении отката, начале и конце записи. Работает независимо: можно оставить только звук без всплывающих сообщений" />
                     </ui:CardControl.Header>
                     <ui:ToggleSwitch x:Name="SoundsToggle" Style="{StaticResource Toggle}" Click="OnSoundsToggleClick" />
                 </ui:CardControl>

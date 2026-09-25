@@ -114,7 +114,12 @@ public sealed class PreviewAudioMixer : IDisposable
         }
         try { _out.Stop(); } catch { }
         try { _out.Dispose(); } catch { }
-        foreach (var r in _readers) { try { r.Dispose(); } catch { } }
+        // Ридеры освобождаем под _gate: сериализует с доигрывающим Read (тот тоже берёт _gate),
+        // а _out уже остановлен, поэтому новых Read не будет — исключает use-after-dispose.
+        lock (_gate)
+        {
+            foreach (var r in _readers) { try { r.Dispose(); } catch { } }
+        }
         foreach (var f in _tempFiles) { try { File.Delete(f); } catch { } }
     }
 

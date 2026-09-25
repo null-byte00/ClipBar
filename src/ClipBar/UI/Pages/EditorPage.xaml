@@ -115,6 +115,36 @@
             </Grid>
         </DataTemplate>
 
+        <Style x:Key="Ed.SpeedChip" TargetType="ListBoxItem">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" Background="{StaticResource CB.Control}" CornerRadius="13" Padding="13,5"
+                                BorderBrush="{StaticResource CB.WidgetBorder}" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CB.ControlHover}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#334CC2FF" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource CB.Accent}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DataTemplate x:Key="Ed.SpeedTemplate">
+            <TextBlock Text="{Binding Label}" FontSize="12.5" FontWeight="SemiBold"
+                       Foreground="{StaticResource CB.TextPrimary}" VerticalAlignment="Center" />
+        </DataTemplate>
+
         <Style x:Key="Ed.Label" TargetType="TextBlock" BasedOn="{StaticResource CB.Text.Caption}">
             <Setter Property="Foreground" Value="{StaticResource CB.TextTertiary}" />
             <Setter Property="FontSize" Value="11.5" />
@@ -314,6 +344,179 @@
 
                                 <TextBlock x:Name="AudioChangedHint" Text="Микс дорожек будет пересобран при экспорте" Style="{StaticResource Ed.Label}"
                                            Foreground="{StaticResource CB.Accent}" Margin="0,8,0,0" Visibility="Collapsed" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="SpeedCard" Style="{StaticResource CB.CardPanel}" Padding="16,14,16,14" Margin="0,12,0,0">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Rocket24" FontSize="18" Foreground="{StaticResource CB.Accent}" />
+                                    <TextBlock Text="Скорость" Style="{StaticResource CB.Text.Title}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="SpeedValue" Style="{StaticResource Ed.Mono}" FontWeight="SemiBold"
+                                               Foreground="{StaticResource CB.Accent}" Margin="8,0,0,0" VerticalAlignment="Center" Text="1×" />
+                                </StackPanel>
+
+                                <ListBox x:Name="SpeedList" Background="Transparent" BorderThickness="0" Padding="0" Margin="0,10,0,0"
+                                         ItemContainerStyle="{StaticResource Ed.SpeedChip}" ItemTemplate="{StaticResource Ed.SpeedTemplate}"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                         SelectionChanged="OnSpeedChanged">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                </ListBox>
+
+                                <TextBlock x:Name="SpeedHint" Style="{StaticResource Ed.Label}" Margin="0,2,0,0"
+                                           TextWrapping="Wrap" Visibility="Collapsed" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="EffectsCard" Style="{StaticResource CB.CardPanel}" Padding="16,14,16,14" Margin="0,12,0,0">
+                            <StackPanel>
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Symbol="Color24" FontSize="18" Foreground="{StaticResource CB.Accent}" />
+                                        <TextBlock Text="Эффекты" Style="{StaticResource CB.Text.Title}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <Button x:Name="EffectsReset" Style="{StaticResource CB.IconButton}" HorizontalAlignment="Right"
+                                            Click="OnEffectsResetClick" ToolTip="Сбросить эффекты">
+                                        <ui:SymbolIcon Symbol="ArrowReset20" />
+                                    </Button>
+                                </Grid>
+
+                                <Grid Margin="0,12,0,0">
+                                    <TextBlock Text="Яркость" Style="{StaticResource Ed.Label}" />
+                                    <TextBlock x:Name="BrightnessValue" Style="{StaticResource Ed.Mono}" FontSize="12"
+                                               Foreground="{StaticResource CB.TextSecondary}" HorizontalAlignment="Right" Text="0" />
+                                </Grid>
+                                <Slider x:Name="BrightnessSlider" Minimum="-100" Maximum="100" Value="0" SmallChange="1" LargeChange="10"
+                                        Margin="0,2,0,0" ValueChanged="OnEffectSliderChanged" />
+
+                                <Grid Margin="0,8,0,0">
+                                    <TextBlock Text="Контраст" Style="{StaticResource Ed.Label}" />
+                                    <TextBlock x:Name="ContrastValue" Style="{StaticResource Ed.Mono}" FontSize="12"
+                                               Foreground="{StaticResource CB.TextSecondary}" HorizontalAlignment="Right" Text="100 %" />
+                                </Grid>
+                                <Slider x:Name="ContrastSlider" Minimum="0" Maximum="200" Value="100" SmallChange="1" LargeChange="10"
+                                        Margin="0,2,0,0" ValueChanged="OnEffectSliderChanged" />
+
+                                <Grid Margin="0,8,0,0">
+                                    <TextBlock Text="Насыщенность" Style="{StaticResource Ed.Label}" />
+                                    <TextBlock x:Name="SaturationValue" Style="{StaticResource Ed.Mono}" FontSize="12"
+                                               Foreground="{StaticResource CB.TextSecondary}" HorizontalAlignment="Right" Text="100 %" />
+                                </Grid>
+                                <Slider x:Name="SaturationSlider" Minimum="0" Maximum="200" Value="100" SmallChange="1" LargeChange="10"
+                                        Margin="0,2,0,0" ValueChanged="OnEffectSliderChanged" />
+
+                                <Grid Margin="0,10,0,0">
+                                    <TextBlock Text="Зеркально по горизонтали" Style="{StaticResource CB.Text.Body}" VerticalAlignment="Center" />
+                                    <ui:ToggleSwitch x:Name="MirrorSwitch" HorizontalAlignment="Right" Click="OnMirrorChanged" />
+                                </Grid>
+
+                                <Grid Margin="0,10,0,0">
+                                    <TextBlock Text="Поворот" Style="{StaticResource CB.Text.Body}" VerticalAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <TextBlock x:Name="RotationValue" Style="{StaticResource Ed.Mono}" FontSize="12"
+                                                   Foreground="{StaticResource CB.TextSecondary}" VerticalAlignment="Center" Margin="0,0,8,0" Text="0°" />
+                                        <Button Style="{StaticResource CB.IconButton}" Click="OnRotateLeftClick" ToolTip="Повернуть влево">
+                                            <ui:SymbolIcon Symbol="ArrowRotateCounterclockwise24" />
+                                        </Button>
+                                        <Button Style="{StaticResource CB.IconButton}" Click="OnRotateRightClick" ToolTip="Повернуть вправо">
+                                            <ui:SymbolIcon Symbol="ArrowRotateClockwise24" />
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Margin="0,10,0,0">
+                                    <TextBlock Text="Появление" Style="{StaticResource Ed.Label}" />
+                                    <TextBlock x:Name="FadeInValue" Style="{StaticResource Ed.Mono}" FontSize="12"
+                                               Foreground="{StaticResource CB.TextSecondary}" HorizontalAlignment="Right" Text="Выкл" />
+                                </Grid>
+                                <Slider x:Name="FadeInSlider" Minimum="0" Maximum="3000" Value="0" SmallChange="100" LargeChange="500"
+                                        Margin="0,2,0,0" ValueChanged="OnEffectSliderChanged" />
+
+                                <Grid Margin="0,8,0,0">
+                                    <TextBlock Text="Затухание" Style="{StaticResource Ed.Label}" />
+                                    <TextBlock x:Name="FadeOutValue" Style="{StaticResource Ed.Mono}" FontSize="12"
+                                               Foreground="{StaticResource CB.TextSecondary}" HorizontalAlignment="Right" Text="Выкл" />
+                                </Grid>
+                                <Slider x:Name="FadeOutSlider" Minimum="0" Maximum="3000" Value="0" SmallChange="100" LargeChange="500"
+                                        Margin="0,2,0,0" ValueChanged="OnEffectSliderChanged" />
+
+                                <Rectangle Height="1" Fill="{StaticResource CB.Divider}" Margin="0,12,0,0" />
+
+                                <TextBlock Text="Текст на видео" Style="{StaticResource Ed.Label}" Margin="0,10,0,4" />
+                                <ui:TextBox x:Name="TextBox" PlaceholderText="Подпись (необязательно)" Icon="{ui:SymbolIcon TextT24}"
+                                            ClearButtonEnabled="True" MaxLength="200" TextChanged="OnTextEffectChanged" />
+
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="TextPosBox" Grid.Column="0" Margin="0,0,8,0" SelectedIndex="0"
+                                              SelectionChanged="OnTextPosChanged">
+                                        <ComboBoxItem Content="Снизу" />
+                                        <ComboBoxItem Content="По центру" />
+                                        <ComboBoxItem Content="Сверху" />
+                                    </ComboBox>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Размер" Style="{StaticResource Ed.Label}" VerticalAlignment="Center" />
+                                        <Slider x:Name="TextSizeSlider" Width="96" Minimum="40" Maximum="200" Value="100"
+                                                SmallChange="5" LargeChange="20" Margin="8,0,0,0" VerticalAlignment="Center"
+                                                ValueChanged="OnEffectSliderChanged" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock x:Name="EffectsHint" Style="{StaticResource Ed.Label}" Foreground="{StaticResource CB.Accent}"
+                                           Margin="0,10,0,0" TextWrapping="Wrap" Visibility="Collapsed"
+                                           Text="Эффекты применяются при экспорте. В превью пока не отображаются." />
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="CutsCard" Style="{StaticResource CB.CardPanel}" Padding="16,14,16,14" Margin="0,12,0,0">
+                            <StackPanel>
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Symbol="Cut24" FontSize="18" Foreground="{StaticResource CB.Accent}" />
+                                        <TextBlock Text="Склейка кусков" Style="{StaticResource CB.Text.Title}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="CutsCount" Style="{StaticResource Ed.Mono}" FontSize="12" HorizontalAlignment="Right"
+                                               Foreground="{StaticResource CB.TextSecondary}" VerticalAlignment="Center" Text="0" />
+                                </Grid>
+
+                                <ui:Button Content="Добавить текущий фрагмент" Icon="{ui:SymbolIcon Add20}" Appearance="Secondary"
+                                           HorizontalAlignment="Stretch" Margin="0,10,0,0" Click="OnAddCutClick" />
+                                <ui:Button Content="Добавить видеофайл…" Icon="{ui:SymbolIcon VideoAdd20}" Appearance="Secondary"
+                                           HorizontalAlignment="Stretch" Margin="0,6,0,0" Click="OnAddFileClick" />
+
+                                <StackPanel x:Name="CutsPanel" Margin="0,8,0,0" />
+
+                                <Grid x:Name="TransitionRow" Margin="0,6,0,0" Visibility="Collapsed">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="TransitionBox" Grid.Column="0" Margin="0,0,8,0" SelectedIndex="0"
+                                              SelectionChanged="OnTransitionChanged">
+                                        <ComboBoxItem Content="Без перехода" />
+                                        <ComboBoxItem Content="Плавно" Tag="fade" />
+                                        <ComboBoxItem Content="Растворение" Tag="dissolve" />
+                                        <ComboBoxItem Content="Сдвиг влево" Tag="slideleft" />
+                                        <ComboBoxItem Content="Через чёрный" Tag="fadeblack" />
+                                        <ComboBoxItem Content="Круг" Tag="circleopen" />
+                                    </ComboBox>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock x:Name="TransitionValue" Style="{StaticResource Ed.Mono}" FontSize="12"
+                                                   Foreground="{StaticResource CB.TextSecondary}" VerticalAlignment="Center" Margin="0,0,8,0" Text="0,5 с" />
+                                        <Slider x:Name="TransitionSlider" Width="90" Minimum="100" Maximum="2000" Value="500"
+                                                SmallChange="50" LargeChange="250" VerticalAlignment="Center" ValueChanged="OnTransitionSliderChanged" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock x:Name="CutsHint" Style="{StaticResource Ed.Label}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                           Text="Добавь два и более фрагмента — они склеятся в один клип по порядку. Эффекты применяются ко всей склейке." />
                             </StackPanel>
                         </Border>
 

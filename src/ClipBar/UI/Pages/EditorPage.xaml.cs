@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ClipBar.Core;
@@ -31,6 +32,20 @@ public partial class EditorPage : Page
         new(ExportPreset.Get(ExportPresetKind.Mp3), Symbol.MusicNote224),
     ];
 
+    public sealed record SpeedItem(double Value, string Label);
+
+    static readonly SpeedItem[] Speeds =
+    [
+        new(0.25, "0,25×"),
+        new(0.5, "0,5×"),
+        new(1.0, "1×"),
+        new(1.5, "1,5×"),
+        new(2.0, "2×"),
+        new(4.0, "4×"),
+    ];
+
+    const int NormalSpeedIndex = 2;
+
     static readonly TimeSpan MinRange = TimeSpan.FromMilliseconds(100);
 
     readonly DispatcherTimer _timer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(33) };
@@ -45,6 +60,10 @@ public partial class EditorPage : Page
     ExportJob? _job;
     int _stripFrames;
     double _stripWidth;
+    double _speed = 1.0;
+
+    sealed record MediaCut(string Path, string Name, TimeSpan In, TimeSpan Out, bool HasAudio);
+    readonly List<MediaCut> _cuts = new();
 
     public EditorPage()
     {
@@ -53,6 +72,8 @@ public partial class EditorPage : Page
         _updatingAudioUi = false;
         PresetList.ItemsSource = Presets;
         PresetList.SelectedIndex = 0;
+        SpeedList.ItemsSource = Speeds;
+        SpeedList.SelectedIndex = NormalSpeedIndex;
 
         _timer.Tick += OnTick;
         _resizeDebounce.Tick += OnResizeDebounce;
@@ -89,16 +110,26 @@ public partial class EditorPage : Page
         else if (_info is not null)
         {
             _timer.Start();
-            if (ExportJob.Current is { IsDone: false } running && _job != running) AttachJob(running);
+            if (ExportJob.Current is { IsDone: false } running && _job != running && IsOurJob(running)) AttachJob(running);
         }
         Focus();
     }
+
+    // Задача экспорта относится к текущему клипу (глобальный ExportJob.Current общий на всё приложение).
+    bool IsOurJob(ExportJob job) =>
+        _clipPath is not null && string.Equals(job.Request.SourcePath, _clipPath, StringComparison.OrdinalIgnoreCase);
 
     void OnUnloaded(object sender, RoutedEventArgs e)
     {
         Pause();
         _timer.Stop();
         _resizeDebounce.Stop();
+        // Освобождаем превью-ресурсы: закрытие оверлея кешует страницу, иначе микшер держит
+        // аудио-устройство и залоченные temp-WAV до следующей загрузки. При повторном открытии
+        // ShowEditor всегда вызывает LoadClip, который пересоздаёт микшер.
+        _loadCts?.Cancel();
+        _mixer?.Dispose();
+        _mixer = null;
     }
 
     async Task LoadClipAsync(string path)
@@ -113,6 +144,25 @@ public partial class EditorPage : Page
         _info = null;
         _clipPath = path;
         _duration = _position = _in = _out = TimeSpan.Zero;
+        SpeedList.SelectedIndex = NormalSpeedIndex;
+        _speed = 1.0;
+        BrightnessSlider.Value = 0;
+        ContrastSlider.Value = 100;
+        SaturationSlider.Value = 100;
+        FadeInSlider.Value = 0;
+        FadeOutSlider.Value = 0;
+        MirrorSwitch.IsChecked = false;
+        _rotation = 0;
+        TextBox.Text = "";
+        TextPosBox.SelectedIndex = 0;
+        TextSizeSlider.Value = 100;
+        _cuts.Clear();
+        TransitionBox.SelectedIndex = 0;
+        TransitionSlider.Value = 500;
+        RebuildCuts();
+        UpdateTransitionUi();
+        ApplySpeed();        // явно обновляем метки/подсказки — no-op присваивания выше событий не поднимают
+        UpdateEffectsUi();
         DetachJob();
         ResetExportUi();
 
@@ -169,7 +219,7 @@ public partial class EditorPage : Page
             catch (Exception ex) { ShowMediaError(ex.Message); }
 
             _timer.Start();
-            if (ExportJob.Current is { IsDone: false } running) AttachJob(running);
+            if (ExportJob.Current is { IsDone: false } running && IsOurJob(running)) AttachJob(running);
             _ = AttachMixerAsync(path, info, cts.Token);
             await LoadTimelineAssetsAsync(path, info, cts.Token);
         }
@@ -244,7 +294,8 @@ public partial class EditorPage : Page
         Media.Pause();
         Media.Position = _position;
         Media.Volume = 1.0;
-        Media.IsMuted = _mixer is not null || PreviewMute.IsChecked == true;
+        try { Media.SpeedRatio = _speed; } catch (Exception ex) { Log.Warn($"SpeedRatio failed: {ex.Message}"); }
+        Media.IsMuted = UseMixer || PreviewMute.IsChecked == true;
         MediaError.Visibility = Visibility.Collapsed;
         PausedBadge.Visibility = Visibility.Visible;
         if (_duration <= TimeSpan.Zero && Media.NaturalDuration.HasTimeSpan)
@@ -287,9 +338,9 @@ public partial class EditorPage : Page
             _position = stopAt;
             Media.Position = stopAt;
         }
-        else if (_mixer is { } mixer && (mixer.Position - _position).Duration() > TimeSpan.FromMilliseconds(150))
+        else if (UseMixer && (_mixer!.Position - _position).Duration() > TimeSpan.FromMilliseconds(150))
         {
-            mixer.Seek(_position);
+            _mixer.Seek(_position);
         }
         Timeline.Position = _position;
         UpdateTimeLabel();
@@ -305,6 +356,7 @@ public partial class EditorPage : Page
             _mixer = mixer;
             mixer.SetGains(SystemGain, MicGain, MasterGain);
             mixer.Muted = PreviewMute.IsChecked == true;
+            if (SpeedChanged) { mixer.Pause(); return; }
             if (_mediaOpened) Media.IsMuted = true;
             if (_playing) mixer.Play(Media.Position);
         }
@@ -321,9 +373,9 @@ public partial class EditorPage : Page
         try
         {
             Media.Volume = 1.0;
-            Media.IsMuted = _mixer is not null || PreviewMute.IsChecked == true;
+            Media.IsMuted = UseMixer || PreviewMute.IsChecked == true;
             Media.Play();
-            if (_mixer is { } mixer) { mixer.Muted = PreviewMute.IsChecked == true; mixer.Play(_position); }
+            if (UseMixer) { _mixer!.Muted = PreviewMute.IsChecked == true; _mixer.Play(_position); }
             _playing = true;
             PlayIcon.Symbol = Symbol.Pause24;
             PlayIcon.Margin = new Thickness(0);
@@ -354,7 +406,7 @@ public partial class EditorPage : Page
         {
             try { Media.Position = t; } catch { }
         }
-        _mixer?.Seek(t);
+        if (UseMixer) _mixer!.Seek(t);
         Timeline.Position = t;
         UpdateTimeLabel();
     }
@@ -415,6 +467,12 @@ public partial class EditorPage : Page
         InLabel.Text = EditorTimeline.FormatTime(_in);
         OutLabel.Text = EditorTimeline.FormatTime(_out);
         SelLabel.Text = EditorTimeline.FormatTime(_out - _in);
+        if (SpeedChanged)
+        {
+            var len = TimeSpan.FromSeconds((_out - _in).TotalSeconds / _speed);
+            SpeedHint.Text = $"Длительность на выходе: {EditorTimeline.FormatTime(len)}. " +
+                             "Требуется перекодирование — быстрое копирование недоступно.";
+        }
         UpdatePresetHint();
     }
 
@@ -463,8 +521,248 @@ public partial class EditorPage : Page
     {
         var muted = PreviewMute.IsChecked == true;
         PreviewMuteIcon.Symbol = muted ? Symbol.SpeakerMute20 : Symbol.Speaker220;
-        if (_mixer is { } mixer) mixer.Muted = muted;
+        if (UseMixer) _mixer!.Muted = muted;
         else if (_mediaOpened) Media.IsMuted = muted;
+    }
+
+    bool SpeedChanged => Math.Abs(_speed - 1.0) > 0.001;
+
+    bool UseMixer => _mixer is not null && !SpeedChanged;
+
+    double SelectedSpeed => (SpeedList.SelectedItem as SpeedItem)?.Value ?? 1.0;
+
+    void OnSpeedChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _speed = SelectedSpeed;
+        ApplySpeed();
+    }
+
+    double EffBrightness => BrightnessSlider.Value / 200.0;   // -100..100 -> -0.5..0.5
+    double EffContrast => ContrastSlider.Value / 100.0;       // 0..200% -> 0..2
+    double EffSaturation => SaturationSlider.Value / 100.0;   // 0..200% -> 0..2
+    TimeSpan EffFadeIn => TimeSpan.FromMilliseconds(FadeInSlider.Value);
+    TimeSpan EffFadeOut => TimeSpan.FromMilliseconds(FadeOutSlider.Value);
+    bool EffMirror => MirrorSwitch.IsChecked == true;
+
+    int _rotation;
+    void OnRotateRightClick(object sender, RoutedEventArgs e) { _rotation = (_rotation + 90) % 360; UpdateEffectsUi(); Focus(); }
+    void OnRotateLeftClick(object sender, RoutedEventArgs e) { _rotation = (_rotation + 270) % 360; UpdateEffectsUi(); Focus(); }
+
+    void OnAddCutClick(object sender, RoutedEventArgs e)
+    {
+        if (_info is null || _clipPath is null) return;
+        if (_out - _in < MinRange)
+        {
+            AppServices.Notifier?.Show("Слишком короткий фрагмент", "Выбери хотя бы 0,1 с", NotifyKind.Warning);
+            return;
+        }
+        _cuts.Add(new MediaCut(_clipPath, Path.GetFileNameWithoutExtension(_clipPath), _in, _out, _info.HasAudio));
+        RebuildCuts();
+        Focus();
+    }
+
+    async void OnAddFileClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Добавить видео в склейку",
+                Filter = "Видео|*.mp4;*.mkv;*.mov;*.webm;*.avi;*.ts;*.m4v|Все файлы|*.*",
+            };
+            var folder = AppServices.Settings?.Current.ClipsFolder;
+            if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder)) dlg.InitialDirectory = folder;
+            if (dlg.ShowDialog() != true) return;
+
+            var clipAtStart = _clipPath;
+            var info = await ClipMediaInfo.ProbeAsync(dlg.FileName);
+            // За время ffprobe пользователь мог сменить клип — не подмешиваем кусок в чужой список.
+            if (!ReferenceEquals(clipAtStart, _clipPath) && !string.Equals(clipAtStart, _clipPath, StringComparison.Ordinal))
+                return;
+            if (!info.HasVideo)
+            {
+                AppServices.Notifier?.Show("Не видеофайл", "В файле нет видеодорожки", NotifyKind.Warning);
+                return;
+            }
+            _cuts.Add(new MediaCut(dlg.FileName, Path.GetFileNameWithoutExtension(dlg.FileName), TimeSpan.Zero, info.Duration, info.HasAudio));
+            RebuildCuts();
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Add file to timeline failed", ex);
+            AppServices.Notifier?.Show("Не удалось добавить файл", ex.Message, NotifyKind.Error);
+        }
+    }
+
+    void OnRemoveCutClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: int i } && i >= 0 && i < _cuts.Count)
+        {
+            _cuts.RemoveAt(i);
+            RebuildCuts();
+        }
+    }
+
+    void RebuildCuts()
+    {
+        if (CutsPanel is null) return;
+        CutsPanel.Children.Clear();
+        for (var i = 0; i < _cuts.Count; i++)
+        {
+            var cut = _cuts[i];
+            var a = cut.In; var b = cut.Out;
+            var grid = new Grid { Margin = new Thickness(0, 0, 0, 4) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var external = _clipPath is null || !string.Equals(cut.Path, _clipPath, StringComparison.OrdinalIgnoreCase);
+            var prefix = external ? $"📎 {cut.Name}  " : "";
+            var tb = new TextBlock
+            {
+                Text = $"{i + 1}.  {prefix}{EditorTimeline.FormatTime(a)} – {EditorTimeline.FormatTime(b)}  ({EditorTimeline.FormatTime(b - a)})",
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = TryFindResource("CB.TextSecondary") as Brush ?? Brushes.Gray,
+                FontSize = 12.5,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+            };
+            var btn = new Button
+            {
+                Style = TryFindResource("CB.IconButton") as Style,
+                Width = 26, Height = 26, Tag = i, ToolTip = "Убрать кусок",
+                Content = new Wpf.Ui.Controls.SymbolIcon { Symbol = Symbol.Dismiss20, FontSize = 15 },
+            };
+            btn.Click += OnRemoveCutClick;
+            Grid.SetColumn(btn, 1);
+            grid.Children.Add(tb);
+            grid.Children.Add(btn);
+            CutsPanel.Children.Add(new Border
+            {
+                Background = TryFindResource("CB.Control") as Brush ?? Brushes.DimGray,
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(10, 4, 6, 4),
+                Margin = new Thickness(0, 0, 0, 4),
+                Child = grid,
+            });
+        }
+        CutsCount.Text = _cuts.Count == 0 ? "0" : $"{_cuts.Count} · {EditorTimeline.FormatTime(TotalCutsDuration())}";
+        CutsHint.Text = _cuts.Count >= 2
+            ? "При экспорте фрагменты склеятся по порядку. Эффекты применяются ко всей склейке."
+            : "Добавь два и более фрагмента — они склеятся в один клип по порядку.";
+        TransitionRow.Visibility = _cuts.Count >= 2 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    TimeSpan TotalCutsDuration()
+    {
+        var t = TimeSpan.Zero;
+        foreach (var c in _cuts) t += c.Out - c.In;
+        return t;
+    }
+
+    bool AllCutsFromMainClip => _clipPath is not null &&
+        _cuts.TrueForAll(c => string.Equals(c.Path, _clipPath, StringComparison.OrdinalIgnoreCase));
+
+    List<(TimeSpan, TimeSpan)>? BuildSameFileSegments()
+    {
+        if (_cuts.Count < 2 || !AllCutsFromMainClip) return null;
+        var list = new List<(TimeSpan, TimeSpan)>(_cuts.Count);
+        foreach (var c in _cuts) list.Add((c.In, c.Out));
+        return list;
+    }
+
+    List<MediaSegment>? BuildMediaSegments()
+    {
+        if (_cuts.Count < 2 || AllCutsFromMainClip) return null;
+        var list = new List<MediaSegment>(_cuts.Count);
+        foreach (var c in _cuts) list.Add(new MediaSegment(c.Path, c.In, c.Out, c.HasAudio));
+        return list;
+    }
+
+    void OnTransitionChanged(object sender, SelectionChangedEventArgs e) => UpdateTransitionUi();
+    void OnTransitionSliderChanged(object sender, RoutedPropertyChangedEventArgs<double> e) => UpdateTransitionUi();
+
+    string? TransitionType => (TransitionBox.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag as string;
+    TimeSpan TransitionDuration => TransitionType is null ? TimeSpan.Zero : TimeSpan.FromMilliseconds(TransitionSlider.Value);
+
+    void UpdateTransitionUi()
+    {
+        if (TransitionValue is null) return;
+        TransitionValue.Text = $"{TransitionSlider.Value / 1000.0:0.0} с";
+        var on = TransitionType is not null;
+        TransitionValue.Visibility = TransitionSlider.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    string? EffText => string.IsNullOrWhiteSpace(TextBox.Text) ? null : TextBox.Text.Trim();
+    TextPosition EffTextPosition => TextPosBox.SelectedIndex switch { 1 => TextPosition.Center, 2 => TextPosition.Top, _ => TextPosition.Bottom };
+    double EffTextScale => TextSizeSlider.Value / 100.0;
+
+    bool EffectsChanged =>
+        Math.Abs(EffBrightness) > 0.001 || Math.Abs(EffContrast - 1) > 0.001 || Math.Abs(EffSaturation - 1) > 0.001
+        || EffMirror || _rotation != 0 || EffFadeIn > TimeSpan.Zero || EffFadeOut > TimeSpan.Zero || EffText is not null;
+
+    void OnEffectSliderChanged(object sender, RoutedPropertyChangedEventArgs<double> e) => UpdateEffectsUi();
+    void OnMirrorChanged(object sender, RoutedEventArgs e) => UpdateEffectsUi();
+    void OnTextEffectChanged(object sender, TextChangedEventArgs e) => UpdateEffectsUi();
+    void OnTextPosChanged(object sender, SelectionChangedEventArgs e) => UpdateEffectsUi();
+
+    void OnEffectsResetClick(object sender, RoutedEventArgs e)
+    {
+        BrightnessSlider.Value = 0;
+        ContrastSlider.Value = 100;
+        SaturationSlider.Value = 100;
+        FadeInSlider.Value = 0;
+        FadeOutSlider.Value = 0;
+        MirrorSwitch.IsChecked = false;
+        _rotation = 0;
+        TextBox.Text = "";
+        TextPosBox.SelectedIndex = 0;
+        TextSizeSlider.Value = 100;
+        UpdateEffectsUi();
+        Focus();
+    }
+
+    void UpdateEffectsUi()
+    {
+        // EffectsHint создаётся последним из используемых здесь элементов —
+        // защищает от раннего SelectionChanged ComboBox во время InitializeComponent.
+        if (EffectsHint is null) return;
+        RotationValue.Text = $"{_rotation}°";
+        BrightnessValue.Text = $"{(int)Math.Round(BrightnessSlider.Value)}";
+        ContrastValue.Text = $"{(int)Math.Round(ContrastSlider.Value)} %";
+        SaturationValue.Text = $"{(int)Math.Round(SaturationSlider.Value)} %";
+        FadeInValue.Text = FadeInSlider.Value < 1 ? "Выкл" : $"{FadeInSlider.Value / 1000.0:0.0} с";
+        FadeOutValue.Text = FadeOutSlider.Value < 1 ? "Выкл" : $"{FadeOutSlider.Value / 1000.0:0.0} с";
+        EffectsHint.Visibility = EffectsChanged ? Visibility.Visible : Visibility.Collapsed;
+        UpdatePresetHint();
+    }
+
+    void ApplySpeed()
+    {
+        SpeedValue.Text = Speeds.FirstOrDefault(s => Math.Abs(s.Value - _speed) < 0.001)?.Label ?? "1×";
+        SpeedHint.Visibility = SpeedChanged ? Visibility.Visible : Visibility.Collapsed;
+        if (SpeedChanged)
+        {
+            var len = TimeSpan.FromSeconds((_out - _in).TotalSeconds / _speed);
+            SpeedHint.Text = $"Длительность на выходе: {EditorTimeline.FormatTime(len)}. " +
+                             "Требуется перекодирование — быстрое копирование недоступно.";
+        }
+
+        if (_mediaOpened)
+        {
+            try { Media.SpeedRatio = _speed; } catch (Exception ex) { Log.Warn($"SpeedRatio failed: {ex.Message}"); }
+        }
+
+        if (SpeedChanged)
+        {
+            _mixer?.Pause();
+            if (_mediaOpened) Media.IsMuted = PreviewMute.IsChecked == true;
+        }
+        else if (_mixer is { } mixer)
+        {
+            if (_mediaOpened) Media.IsMuted = true;
+            mixer.Muted = PreviewMute.IsChecked == true;
+            if (_playing) mixer.Play(_position);
+        }
+
+        UpdatePresetHint();
     }
 
     PresetItem SelectedPreset => PresetList.SelectedItem as PresetItem ?? Presets[0];
@@ -478,6 +776,8 @@ public partial class EditorPage : Page
         var kind = SelectedPreset.Preset.Kind;
         PresetHint.Text = kind switch
         {
+            ExportPresetKind.FastCopy when _cuts.Count >= 2 => "Склейка кусков требует перекодирования точно по кадрам.",
+            ExportPresetKind.FastCopy when SpeedChanged || EffectsChanged => "Из-за скорости или эффектов клип будет перекодирован точно по кадрам.",
             ExportPresetKind.FastCopy when AudioChanged => "Видео копируется без потерь, звук пересобирается с новой громкостью.",
             ExportPresetKind.FastCopy => "Все дорожки сохраняются как есть. Границы сдвинутся к ближайшему ключевому кадру.",
             ExportPresetKind.Precise => "Точная обрезка по кадрам, одна дорожка — микс.",
@@ -503,9 +803,21 @@ public partial class EditorPage : Page
         {
             if (_info is null || _clipPath is null) return;
             if (_job is { IsDone: false }) return;
-            if (_out - _in < MinRange)
+            // Глобальная задача экспорта одна на приложение: не запускаем второй параллельный ffmpeg.
+            if (ExportJob.Current is { IsDone: false })
+            {
+                AppServices.Notifier?.Show("Экспорт уже идёт", "Дождись окончания текущего экспорта", NotifyKind.Warning);
+                return;
+            }
+            if (_cuts.Count < 2 && _out - _in < MinRange)
             {
                 AppServices.Notifier?.Show("Слишком короткий фрагмент", "Выбери хотя бы 0,1 с", NotifyKind.Warning);
+                return;
+            }
+            if (_cuts.Count == 1 && !AllCutsFromMainClip)
+            {
+                AppServices.Notifier?.Show("Нужен ещё фрагмент",
+                    "Один добавленный файл нельзя склеить. Добавь второй фрагмент, либо открой файл через «Открыть файл».", NotifyKind.Warning);
                 return;
             }
             Pause();
@@ -520,6 +832,21 @@ public partial class EditorPage : Page
                 SystemGain = SystemGain,
                 MicGain = MicGain,
                 MasterGain = MasterGain,
+                Speed = _speed,
+                Brightness = EffBrightness,
+                Contrast = EffContrast,
+                Saturation = EffSaturation,
+                Mirror = EffMirror,
+                Rotation = _rotation,
+                FadeIn = EffFadeIn,
+                FadeOut = EffFadeOut,
+                Text = EffText,
+                TextPosition = EffTextPosition,
+                TextScale = EffTextScale,
+                Segments = BuildSameFileSegments(),
+                MediaSegments = BuildMediaSegments(),
+                Transition = _cuts.Count >= 2 ? TransitionDuration : TimeSpan.Zero,
+                TransitionType = TransitionType ?? "fade",
             };
             AttachJob(ExportJob.Start(request));
         }
@@ -740,6 +1067,7 @@ public partial class EditorPage : Page
         if (_info is null) return;
         var focused = Keyboard.FocusedElement;
         if (focused is TextBoxBase) return;
+        if (focused is System.Windows.Controls.ComboBox) return;   // выпадающие списки (позиция текста, переход) — не перехватываем
         if (focused is ButtonBase && e.Key is Key.Space or Key.Enter) return;
         if (focused is Slider && e.Key is Key.Left or Key.Right or Key.Home or Key.End) return;
 
