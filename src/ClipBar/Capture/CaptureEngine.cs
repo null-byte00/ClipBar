@@ -451,7 +451,11 @@ public sealed class CaptureEngine : ICaptureEngine
         if (lp is null || !File.Exists(lp)) return;
         try
         {
-            foreach (var line in File.ReadLines(lp))
+            // Тот же шаринг, что и tail — ffmpeg держит файл открытым на запись.
+            using var fs = new FileStream(lp, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(fs, Encoding.UTF8);
+            string? line;
+            while ((line = reader.ReadLine()) is not null)
             {
                 if (!SegmentStore.TryParseCsvLine(line, out var name, out var start, out var end)) continue;
                 if (!SegmentStore.TryParseIndex(name, out var index)) continue;
