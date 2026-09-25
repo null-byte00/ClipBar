@@ -60,9 +60,12 @@ internal static class CaptureCommand
         switch (enc.Family)
         {
             case "qsv":
-                sb.Append(",hwmap=derive_device=qsv,format=qsv,vpp_qsv=");
-                if (scale) sb.Append($"w=-1:h={outH}:");
-                sb.Append("format=nv12:out_range=tv");
+                // Надёжный путь: скачиваем кадры в системную память вместо GPU-side vpp_qsv,
+                // который на Intel Arc периодически падает с "Conversion failed". h264_qsv
+                // кодирует из системного nv12 (загружает на GPU сам). Стабильнее, ценой копии кадра.
+                sb.Append(",hwdownload,format=bgra");
+                if (scale) sb.Append($",scale=-2:{outH}:flags=fast_bilinear");
+                sb.Append(",format=nv12");
                 break;
             case "nvenc":
             case "amf":

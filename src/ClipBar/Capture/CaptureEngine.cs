@@ -179,6 +179,7 @@ public sealed class CaptureEngine : ICaptureEngine
             await EnsureCaptureRunningAsync();
 
             CatchUpSegments();
+            Log.Info($"StartRec DIAG: lastIndex={_segments.LastIndex} count={_segments.Count} listPath={_listPath} epoch={_epoch}");
             _recordingStartIndex = _segments.LastIndex + 1;
             _recordingHold = _segments.Hold(_recordingStartIndex, int.MaxValue);
             _recordingStopwatch = Stopwatch.StartNew();
@@ -196,6 +197,7 @@ public sealed class CaptureEngine : ICaptureEngine
             await _segments.WaitForIndexAsync(_segments.LastIndex + 1, TimeSpan.FromSeconds(2));
             CatchUpSegments();
             var segs = _segments.Range(_recordingStartIndex, _segments.LastIndex);
+            Log.Info($"StopRec DIAG: startIndex={_recordingStartIndex} lastIndex={_segments.LastIndex} count={_segments.Count} range={segs.Count} listPath={_listPath}");
             if (segs.Count == 0)
                 throw new InvalidOperationException("Не удалось сохранить запись: сегменты не найдены");
 
