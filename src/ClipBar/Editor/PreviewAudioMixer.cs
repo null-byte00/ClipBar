@@ -10,7 +10,7 @@ public sealed class PreviewAudioMixer : IDisposable
     readonly WaveFileReader[] _readers;
     readonly TrackGain[] _tracks;
     readonly string[] _tempFiles;
-#pragma warning disable CS0618 // see the constructor
+#pragma warning disable CS0618
     readonly WasapiOut _out;
 #pragma warning restore CS0618
     readonly object _gate = new();
@@ -26,7 +26,7 @@ public sealed class PreviewAudioMixer : IDisposable
         _tracks = _readers.Select(r => new TrackGain(r.ToSampleProvider())).ToArray();
         var mixer = new MixingSampleProvider(_tracks) { ReadFully = true };
         var limited = new SoftLimiter(mixer);
-#pragma warning disable CS0618 // NAudio 3.1 marks WasapiOut obsolete in favour of a builder that isn't in this package version
+#pragma warning disable CS0618
         _out = new WasapiOut(NAudio.CoreAudioApi.AudioClientShareMode.Shared, useEventSync: true, latency: 60);
 #pragma warning restore CS0618
         _out.Init(new Locked(limited, _gate));
@@ -114,8 +114,7 @@ public sealed class PreviewAudioMixer : IDisposable
         }
         try { _out.Stop(); } catch { }
         try { _out.Dispose(); } catch { }
-        // Ридеры освобождаем под _gate: сериализует с доигрывающим Read (тот тоже берёт _gate),
-        // а _out уже остановлен, поэтому новых Read не будет — исключает use-after-dispose.
+
         lock (_gate)
         {
             foreach (var r in _readers) { try { r.Dispose(); } catch { } }

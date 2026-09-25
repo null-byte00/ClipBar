@@ -2,7 +2,6 @@ namespace ClipBar.Editor;
 
 public enum TextPosition { Bottom, Center, Top }
 
-// Кусок из конкретного файла для мультифайловой склейки.
 public sealed record MediaSegment(string Path, TimeSpan In, TimeSpan Out, bool HasAudio);
 
 public sealed class ExportRequest
@@ -28,7 +27,7 @@ public sealed class ExportRequest
     public double Contrast { get; init; } = 1.0;
     public double Saturation { get; init; } = 1.0;
     public bool Mirror { get; init; }
-    public int Rotation { get; init; }   // 0, 90, 180, 270 — по часовой
+    public int Rotation { get; init; }
     public TimeSpan FadeIn { get; init; }
     public TimeSpan FadeOut { get; init; }
 
@@ -36,17 +35,14 @@ public sealed class ExportRequest
     public TextPosition TextPosition { get; init; } = TextPosition.Bottom;
     public double TextScale { get; init; } = 1.0;
 
-    // Готовый фрагмент drawtext, собирается движком на время экспорта (нужен временный textfile).
     internal string? TextFilter { get; set; }
 
     public bool HasText => !string.IsNullOrWhiteSpace(Text);
 
-    // Несколько кусков ОДНОГО клипа для склейки. null/1 элемент — обычный режим (In/Out).
     public IReadOnlyList<(TimeSpan In, TimeSpan Out)>? Segments { get; init; }
 
     public bool MultiSegment => Segments is { Count: > 1 };
 
-    // Несколько кусков из РАЗНЫХ файлов. Имеет приоритет над Segments, когда задан.
     public IReadOnlyList<MediaSegment>? MediaSegments { get; init; }
 
     public bool MultiMedia => MediaSegments is { Count: > 1 };
@@ -61,13 +57,10 @@ public sealed class ExportRequest
         else foreach (var (a, b) in EffectiveSegments) yield return Math.Max(0, (b - a).TotalSeconds);
     }
 
-    // Переход между кусками (0 = стык встык). Тип — имя xfade-перехода ffmpeg.
     public TimeSpan Transition { get; init; }
     public string TransitionType { get; init; } = "fade";
     public bool HasTransition => AnyMulti && Transition > TimeSpan.Zero;
 
-    // Фактическая длительность перехода: клампится под самый короткий кусок; ниже порога — стык встык (0).
-    // Единый источник правды для движка и для расчёта OutputLength.
     public double EffectiveTransitionSeconds
     {
         get
@@ -105,12 +98,10 @@ public sealed class ExportRequest
 
     public bool Rotated => Rotation % 360 != 0;
 
-    // Поворот на 90/270 меняет местами ширину и высоту кадра.
     bool SwapsAxes => ((Rotation % 360) + 360) % 360 is 90 or 270;
     public int EffWidth => SwapsAxes ? Info.Height : Info.Width;
     public int EffHeight => SwapsAxes ? Info.Width : Info.Height;
 
-    // Фильтры, работающие только в системной памяти (нельзя применить к QSV-кадрам напрямую).
     public bool NeedsSoftwareFilters => ColorChanged || Mirror || HasFades || HasText || Rotated;
 
     public bool VideoChanged => SpeedChanged || NeedsSoftwareFilters;

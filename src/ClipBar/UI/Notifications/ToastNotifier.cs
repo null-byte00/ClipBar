@@ -42,8 +42,6 @@ public sealed class ToastNotifier : INotifier, IDisposable
         Log.Info($"[toast/{kind}] {title}: {message}");
         var settings = AppServices.Settings?.Current;
 
-        // Видимый тост подавляется при выключенных уведомлениях (ошибки — всегда).
-        // Звук управляется отдельно: «звук без уведомлений» — допустимый режим.
         var showVisual = settings is not { ShowNotifications: false } || kind == NotifyKind.Error;
 
         var now = DateTime.UtcNow;
@@ -53,7 +51,7 @@ public sealed class ToastNotifier : INotifier, IDisposable
             if (showVisual)
             {
                 if (key == _lastKey && now - _lastKeyAt < TimeSpan.FromSeconds(4)) return;
-                _lastKey = key; _lastKeyAt = now;   // дедуп-ключ обновляем только когда реально показываем тост
+                _lastKey = key; _lastKeyAt = now;
             }
             var sound = settings is null or { PlaySounds: true } ? PickSound(kind, title) : ToastSound.None;
             if (sound != ToastSound.None && now - _lastSoundAt >= TimeSpan.FromMilliseconds(700))

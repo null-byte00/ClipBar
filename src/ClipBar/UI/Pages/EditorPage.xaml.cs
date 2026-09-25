@@ -115,7 +115,6 @@ public partial class EditorPage : Page
         Focus();
     }
 
-    // Задача экспорта относится к текущему клипу (глобальный ExportJob.Current общий на всё приложение).
     bool IsOurJob(ExportJob job) =>
         _clipPath is not null && string.Equals(job.Request.SourcePath, _clipPath, StringComparison.OrdinalIgnoreCase);
 
@@ -124,9 +123,7 @@ public partial class EditorPage : Page
         Pause();
         _timer.Stop();
         _resizeDebounce.Stop();
-        // Освобождаем превью-ресурсы: закрытие оверлея кешует страницу, иначе микшер держит
-        // аудио-устройство и залоченные temp-WAV до следующей загрузки. При повторном открытии
-        // ShowEditor всегда вызывает LoadClip, который пересоздаёт микшер.
+
         _loadCts?.Cancel();
         _mixer?.Dispose();
         _mixer = null;
@@ -161,7 +158,7 @@ public partial class EditorPage : Page
         TransitionSlider.Value = 500;
         RebuildCuts();
         UpdateTransitionUi();
-        ApplySpeed();        // явно обновляем метки/подсказки — no-op присваивания выше событий не поднимают
+        ApplySpeed();
         UpdateEffectsUi();
         DetachJob();
         ResetExportUi();
@@ -537,9 +534,9 @@ public partial class EditorPage : Page
         ApplySpeed();
     }
 
-    double EffBrightness => BrightnessSlider.Value / 200.0;   // -100..100 -> -0.5..0.5
-    double EffContrast => ContrastSlider.Value / 100.0;       // 0..200% -> 0..2
-    double EffSaturation => SaturationSlider.Value / 100.0;   // 0..200% -> 0..2
+    double EffBrightness => BrightnessSlider.Value / 200.0;
+    double EffContrast => ContrastSlider.Value / 100.0;
+    double EffSaturation => SaturationSlider.Value / 100.0;
     TimeSpan EffFadeIn => TimeSpan.FromMilliseconds(FadeInSlider.Value);
     TimeSpan EffFadeOut => TimeSpan.FromMilliseconds(FadeOutSlider.Value);
     bool EffMirror => MirrorSwitch.IsChecked == true;
@@ -576,7 +573,7 @@ public partial class EditorPage : Page
 
             var clipAtStart = _clipPath;
             var info = await ClipMediaInfo.ProbeAsync(dlg.FileName);
-            // За время ffprobe пользователь мог сменить клип — не подмешиваем кусок в чужой список.
+
             if (!ReferenceEquals(clipAtStart, _clipPath) && !string.Equals(clipAtStart, _clipPath, StringComparison.Ordinal))
                 return;
             if (!info.HasVideo)
@@ -721,8 +718,7 @@ public partial class EditorPage : Page
 
     void UpdateEffectsUi()
     {
-        // EffectsHint создаётся последним из используемых здесь элементов —
-        // защищает от раннего SelectionChanged ComboBox во время InitializeComponent.
+
         if (EffectsHint is null) return;
         RotationValue.Text = $"{_rotation}°";
         BrightnessValue.Text = $"{(int)Math.Round(BrightnessSlider.Value)}";
@@ -803,7 +799,7 @@ public partial class EditorPage : Page
         {
             if (_info is null || _clipPath is null) return;
             if (_job is { IsDone: false }) return;
-            // Глобальная задача экспорта одна на приложение: не запускаем второй параллельный ffmpeg.
+
             if (ExportJob.Current is { IsDone: false })
             {
                 AppServices.Notifier?.Show("Экспорт уже идёт", "Дождись окончания текущего экспорта", NotifyKind.Warning);
@@ -1067,7 +1063,7 @@ public partial class EditorPage : Page
         if (_info is null) return;
         var focused = Keyboard.FocusedElement;
         if (focused is TextBoxBase) return;
-        if (focused is System.Windows.Controls.ComboBox) return;   // выпадающие списки (позиция текста, переход) — не перехватываем
+        if (focused is System.Windows.Controls.ComboBox) return;
         if (focused is ButtonBase && e.Key is Key.Space or Key.Enter) return;
         if (focused is Slider && e.Key is Key.Left or Key.Right or Key.Home or Key.End) return;
 

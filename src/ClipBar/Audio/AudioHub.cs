@@ -205,7 +205,7 @@ public sealed class AudioHub : IAudioHub
                     ? enumerator.GetDefaultAudioEndpoint(flow, Role.Multimedia)
                     : enumerator.GetDevice(deviceId);
 
-#pragma warning disable CS0618 // NAudio 3.1's simple WasapiLoopbackCapture/WasapiCapture are deprecated in favor of
+#pragma warning disable CS0618
 
                 IWaveIn capture = isLoopback ? new WasapiLoopbackCapture(device) : new WasapiCapture(device);
 #pragma warning restore CS0618

@@ -150,7 +150,7 @@ public sealed class ExportService
 
         var vf = new List<string>();
         if (req.SpeedChanged) vf.Add(Setpts(req));
-        foreach (var f in RotateFilters(req)) vf.Add(f);   // до crop/scale: план считает от повёрнутых размеров
+        foreach (var f in RotateFilters(req)) vf.Add(f);
         if (plan.Crop) vf.Add($"crop={plan.CropW}:{plan.CropH}:{plan.CropX}:{plan.CropY}");
         if (plan.Crop || plan.Scale) vf.Add($"scale={plan.Width}:{plan.Height}:flags=bicubic");
         if (req.ColorChanged)
@@ -165,8 +165,6 @@ public sealed class ExportService
         await RunAsync(swArgs, req.OutputLength, progress, status, ct);
     }
 
-    // Вырезка нескольких кусков клипа и склейка (concat), поверх — те же эффекты.
-    // Аудио берётся из микс-дорожки (0:a:0); раздельная регулировка дорожек в мультирежиме не применяется.
     async Task MultiCutAsync(ExportRequest req, string output, ReencodeMode mode, IProgress<ExportProgress>? progress, CancellationToken ct,
         VideoPlan? plan = null, string? status = null)
     {
@@ -195,8 +193,6 @@ public sealed class ExportService
             }
         }
 
-        // Переход между кусками (xfade/acrossfade) в поток [vc]/[ac], иначе жёсткая склейка.
-        // effT — единый источник правды из ExportRequest (клампится под самый короткий кусок).
         var effT = req.EffectiveTransitionSeconds;
 
         if (effT > 0)
@@ -227,7 +223,6 @@ public sealed class ExportService
             sb.Append($"{concatIns}concat=n={segs.Count}:v=1:a={(hasAudio ? 1 : 0)}[vc]{(hasAudio ? "[ac]" : "")};");
         }
 
-        // Видео- и аудиоэффекты поверх склейки ([vc]/[ac] -> [v]/[a]).
         var map = AppendMergedEffects(sb, req, plan, encoder, hasAudio, mode == ReencodeMode.Discord ? 128 : 192);
 
         status ??= $"Склейка {segs.Count} кусков…";
@@ -236,7 +231,6 @@ public sealed class ExportService
         await RunAsync(args, req.OutputLength, progress, status, ct);
     }
 
-    // Аудио-хвост (atempo/громкость/фейды/лимитер) — единый для склейки видео и MP3.
     static string AudioTailFilters(ExportRequest req)
     {
         var afx = new List<string>();
@@ -253,7 +247,6 @@ public sealed class ExportService
         return string.Join(',', afx);
     }
 
-    // Общий хвост: применяет все эффекты к слитым [vc]/[ac], возвращает строку -map.
     string AppendMergedEffects(StringBuilder sb, ExportRequest req, VideoPlan plan, string encoder, bool hasAudio, int audioKbps)
     {
         var vfx = new List<string>();
@@ -267,7 +260,7 @@ public sealed class ExportService
         if (req.Mirror) vfx.Add("hflip");
         if (req.TextFilter is { } dt) vfx.Add(dt);
         foreach (var f in VideoFades(req)) vfx.Add(f);
-        // fps приводим только при ПОНИЖЕНИИ (как FpsArg в одиночном пути) — иначе 59.94→60 дублирует кадры.
+
         if (req.Info.Fps > plan.Fps + 0.5) vfx.Add($"fps={plan.Fps}");
         vfx.Add(encoder == "libx264" ? "format=yuv420p" : "format=nv12");
         sb.Append($"[vc]{string.Join(',', vfx)}[v]");
@@ -282,7 +275,6 @@ public sealed class ExportService
         return map;
     }
 
-    // Склейка кусков из РАЗНЫХ файлов: нормализация каждого к общему размеру/fps, тишина где нет звука.
     async Task MultiMediaAsync(ExportRequest req, string output, ReencodeMode mode, IProgress<ExportProgress>? progress, CancellationToken ct,
         VideoPlan? plan = null, string? status = null)
     {
@@ -303,8 +295,6 @@ public sealed class ExportService
         var norm = $"scale={tw}:{th}:force_original_aspect_ratio=decrease," +
                    $"pad={tw}:{th}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps={fps},format=yuv420p";
 
-        // Отдельный вход на каждый кусок: один и тот же файл может встречаться несколько раз,
-        // а входной пад ffmpeg нельзя подавать в два фильтра, поэтому дедуп входов недопустим.
         var inputList = new List<string>();
         var sb = new StringBuilder();
         var concatIns = new StringBuilder();
@@ -364,7 +354,6 @@ public sealed class ExportService
         await RunAsync(args, req.OutputLength, progress, status, ct);
     }
 
-    // MP3 из разных файлов: конкатенация аудио (сегменты без звука дают тишину).
     async Task MultiMediaAudioAsync(ExportRequest req, string output, IProgress<ExportProgress>? progress, CancellationToken ct)
     {
         var segs = req.MediaSegments!;
@@ -412,7 +401,6 @@ public sealed class ExportService
         throw new ExportException($"Не удалось уложиться в 10 МБ ({size / 1024.0 / 1024.0:0.0} МБ). Убери часть кусков.");
     }
 
-    // Discord + склейка: подгоняем битрейт под 10 МБ так же, как обычный Discord.
     async Task MultiDiscordAsync(ExportRequest req, string output, IProgress<ExportProgress>? progress, CancellationToken ct)
     {
         var plan = PlanVideo(req, ReencodeMode.Discord);
@@ -431,7 +419,6 @@ public sealed class ExportService
         throw new ExportException($"Не удалось уложиться в 10 МБ ({size / 1024.0 / 1024.0:0.0} МБ). Убери часть кусков.");
     }
 
-    // MP3 + склейка: конкатенация аудио из микс-дорожки в один MP3.
     async Task MultiAudioAsync(ExportRequest req, string output, IProgress<ExportProgress>? progress, CancellationToken ct)
     {
         if (!req.Info.HasAudio) throw new ExportException("В клипе нет звуковой дорожки");
@@ -498,7 +485,7 @@ public sealed class ExportService
     static VideoPlan PlanVideo(ExportRequest req, ReencodeMode mode)
     {
         var info = req.Info;
-        // Эффективные размеры: с учётом поворота (rotate применяется до crop/scale).
+
         int w = req.EffWidth > 0 ? req.EffWidth : info.Width;
         int h = req.EffHeight > 0 ? req.EffHeight : info.Height;
         var fps = info.Fps > 1 ? (int)Math.Round(info.Fps) : 60;
@@ -614,9 +601,9 @@ public sealed class ExportService
     {
         switch (((req.Rotation % 360) + 360) % 360)
         {
-            case 90: yield return "transpose=1"; break;             // по часовой
+            case 90: yield return "transpose=1"; break;
             case 180: yield return "transpose=1"; yield return "transpose=1"; break;
-            case 270: yield return "transpose=2"; break;            // против часовой
+            case 270: yield return "transpose=2"; break;
         }
     }
 
@@ -636,13 +623,11 @@ public sealed class ExportService
     {
         Directory.CreateDirectory(AppPaths.TempDir);
         var path = Path.Combine(AppPaths.TempDir, $"text_{Guid.NewGuid():N}.txt");
-        // Без BOM, перевод строк \n — drawtext их понимает.
+
         File.WriteAllText(path, text.Replace("\r\n", "\n").Replace("\r", "\n"), new UTF8Encoding(false));
         return path;
     }
 
-    // Экранируем путь для значения опции внутри filtergraph.
-    // Два уровня раскавычивания ffmpeg: слэши прямые, двоеточие через двойной бэкслеш (\\:).
     static string EscapeFilterPath(string p) => p.Replace('\\', '/').Replace(":", "\\\\:");
 
     static string BuildDrawText(ExportRequest req, string textFile)
