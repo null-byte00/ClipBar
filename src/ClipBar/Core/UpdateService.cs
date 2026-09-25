@@ -15,7 +15,7 @@ public static class UpdateService
 
     static Timer? _timer;
     static readonly SemaphoreSlim Gate = new(1, 1);
-    static bool _offered;
+    static Version? _offeredVersion;
 
     public static Version Current => typeof(UpdateService).Assembly.GetName().Version ?? new Version(1, 0, 0);
     static string UpdatesDir => Path.Combine(AppPaths.DataDir, "updates");
@@ -104,8 +104,8 @@ public static class UpdateService
                 if (userInitiated) AppServices.Notifier?.Show("Не удалось скачать обновление", "Проверь интернет и попробуй ещё раз", NotifyKind.Warning);
                 return;
             }
-            if (_offered && !userInitiated) return;
-            _offered = true;
+            if (_offeredVersion == latest.Version && !userInitiated) return;
+            _offeredVersion = latest.Version;
             AppServices.Notifier?.ShowAction($"Обновление ClipBar {latest.Version.ToString(3)} готово",
                 "Установится само при следующем запуске", NotifyKind.Success, "Нажми, чтобы установить сейчас",
                 () => InstallNow(path));

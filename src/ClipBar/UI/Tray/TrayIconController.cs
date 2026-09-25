@@ -95,7 +95,9 @@ public sealed class TrayIconController : IDisposable
             if (recording != _showingRecordingIcon)
             {
                 _showingRecordingIcon = recording;
+                var old = _icon.Icon;
                 _icon.Icon = (Icon)(recording ? _recordingIcon : _normalIcon).Clone();
+                old?.Dispose();   // прошлый клон освобождаем, иначе течёт GDI-хендл на каждый старт/стоп записи
             }
             if (recording && !_recordingTick.IsEnabled) _recordingTick.Start();
             else if (!recording && _recordingTick.IsEnabled) _recordingTick.Stop();

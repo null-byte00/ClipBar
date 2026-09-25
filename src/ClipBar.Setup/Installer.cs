@@ -47,18 +47,23 @@ public static class Installer
                                 ?? throw new InvalidOperationException("В установщике нет файлов программы (payload.zip)."))
             using (var zip = new ZipArchive(stream, ZipArchiveMode.Read))
             {
+                var baseDir = Path.GetFullPath(o.Directory).TrimEnd('\\') + "\\";
+                var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 long total = zip.Entries.Sum(e => e.Length), done = 0;
                 foreach (var entry in zip.Entries)
                 {
                     var target = Path.GetFullPath(Path.Combine(o.Directory, entry.FullName));
-                    if (!target.StartsWith(Path.GetFullPath(o.Directory), StringComparison.OrdinalIgnoreCase))
+                    if (!target.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase))
                         throw new InvalidOperationException("Некорректный путь в архиве: " + entry.FullName);
                     if (string.IsNullOrEmpty(entry.Name)) { Directory.CreateDirectory(target); continue; }
                     Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                     WriteWithRetry(entry, target);
+                    written.Add(target);
                     done += entry.Length;
                     progress.Report((0.05 + 0.85 * done / Math.Max(1, total), "Распаковываю файлы…"));
                 }
+
+                PruneOrphans(o.Directory, written);
             }
 
             var exe = Path.Combine(o.Directory, "ClipBar.exe");
@@ -85,13 +90,23 @@ public static class Installer
 
     static void StopRunningClipBar(string dir)
     {
+        var full = Path.GetFullPath(dir).TrimEnd('\\');
         foreach (var p in Process.GetProcessesByName("ClipBar"))
         {
             try
             {
+                // Трогаем только копию из целевой папки — чужие/портативные копии не убиваем.
+                string? path = null;
+                try { path = p.MainModule?.FileName; } catch { }
+                if (path is not null &&
+                    !Path.GetFullPath(path).StartsWith(full, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 p.Kill(entireProcessTree: true);
-                p.WaitForExit(5000);
+                if (!p.WaitForExit(10000))
+                    throw new IOException("Не удалось закрыть запущенный ClipBar. Закрой программу и повтори.");
             }
+            catch (IOException) { throw; }
             catch { }
             finally { p.Dispose(); }
         }
@@ -102,8 +117,23 @@ public static class Installer
         for (var attempt = 1; ; attempt++)
         {
             try { entry.ExtractToFile(target, overwrite: true); return; }
-            catch (IOException) when (attempt < 10) { Thread.Sleep(300); }
+            catch (IOException) when (attempt < 40) { Thread.Sleep(500); }
+            catch (UnauthorizedAccessException) when (attempt < 40) { Thread.Sleep(500); }
         }
+    }
+
+    // Удаляет файлы прошлой версии, которых нет в новой раскладке (чтобы не копились и не грузились старые сборки).
+    static void PruneOrphans(string dir, HashSet<string> written)
+    {
+        try
+        {
+            foreach (var f in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+            {
+                var full = Path.GetFullPath(f);
+                if (!written.Contains(full)) { try { File.Delete(full); } catch { } }
+            }
+        }
+        catch { }
     }
 
     static void RegisterUninstall(string dir, string exe)

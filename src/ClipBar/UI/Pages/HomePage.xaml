@@ -118,7 +118,7 @@
             <Setter Property="Foreground" Value="{StaticResource CB.Accent}" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
-        <Style x:Key="Home.Link" TargetType="ui:HyperlinkButton">
+        <Style x:Key="Home.Link" TargetType="ui:HyperlinkButton" BasedOn="{StaticResource {x:Type ui:HyperlinkButton}}">
             <Setter Property="Padding" Value="8,4" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="Margin" Value="0,-4,-8,-4" />

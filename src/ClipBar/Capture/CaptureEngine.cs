@@ -349,7 +349,7 @@ public sealed class CaptureEngine : ICaptureEngine
         _process = null;
         if (p is not null)
         {
-            try { await Ffmpeg.StopGracefullyAsync(p, TimeSpan.FromSeconds(5)); }
+            try { await Ffmpeg.StopGracefullyAsync(p, TimeSpan.FromSeconds(5)).ConfigureAwait(false); }
             catch (Exception ex) { Log.Error("Stopping capture process failed", ex); }
             finally { p.Dispose(); }
         }
@@ -385,6 +385,7 @@ public sealed class CaptureEngine : ICaptureEngine
                     try
                     {
                         if (!_wantRunning || !ReferenceEquals(process, _process)) return;
+                        await StopCaptureProcessAsync();   // освободить рухнувший процесс, аудио-сессию и stderr, иначе утечка и WASAPI остаётся открытым
                         await StartCaptureProcessAsync();
                     }
                     finally { _lifecycle.Release(); }

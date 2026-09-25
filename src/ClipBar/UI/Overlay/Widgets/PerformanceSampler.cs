@@ -41,14 +41,12 @@ public sealed partial class PerformanceSampler : IDisposable
         _timer?.Dispose();
         _timer = null;
         ClosePdh();
-    }
-
-    public void Dispose()
-    {
-        Stop();
-        foreach (var (p, _) in _tracked.Values) p.Dispose();
+        // Освобождаем хендлы отслеживаемых процессов, иначе копятся при каждом открытии/закрытии панели.
+        foreach (var (p, _) in _tracked.Values) { try { p.Dispose(); } catch { } }
         _tracked.Clear();
     }
+
+    public void Dispose() => Stop();
 
     void Tick()
     {

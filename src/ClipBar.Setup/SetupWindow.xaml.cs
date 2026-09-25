@@ -24,8 +24,11 @@ public partial class SetupWindow
             UpdateNote.Text = $"ClipBar {Installer.ExistingVersion() ?? ""} уже установлен — он будет закрыт и обновлён. Клипы и настройки сохранятся.";
         }
         RefreshChecks();
-        if (AutoUpdate && existing is not null)
+        // Авто-обновление: ставим в найденную папку, а если ключа реестра нет — в папку по умолчанию,
+        // чтобы --update не завис пустым окном без пользователя.
+        if (AutoUpdate && Installer.HasPayload)
         {
+            if (existing is null) PathBox.Text = Installer.DefaultDirectory;
             DesktopCheck.IsChecked = File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "ClipBar.lnk"));
             AutostartCheck.IsChecked = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")?.GetValue("ClipBar") is not null;
             LaunchCheck.IsChecked = true;
