@@ -48,7 +48,7 @@
             <Setter Property="Margin" Value="2,-4,0,10" />
         </Style>
 
-        <Style x:Key="Combo" TargetType="ComboBox">
+        <Style x:Key="Combo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="MinWidth" Value="220" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
