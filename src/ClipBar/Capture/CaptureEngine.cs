@@ -527,14 +527,33 @@ public sealed class CaptureEngine : ICaptureEngine
         var listPath = Path.Combine(AppPaths.TempDir, $"concat_{Guid.NewGuid():N}.txt");
         try
         {
-            var sb = new StringBuilder();
+            // Отбрасываем пустые/пропавшие файлы.
+            var valid = new List<SegmentInfo>(segs.Count);
             foreach (var s in segs)
+            {
+                try { var fi = new FileInfo(s.Path); if (fi.Exists && fi.Length > 0) valid.Add(s); }
+                catch { }
+            }
+            if (valid.Count == 0)
+                throw new InvalidOperationException("Не удалось склеить видео: нет валидных сегментов");
+
+            // ПЕРВЫЙ сегмент должен иметь валидный звук: если там просадка звука (0 каналов),
+            // mp4-муксер не может записать заголовок AAC. Пропускаем ведущие сегменты без звука.
+            var startIdx = 0;
+            while (startIdx < valid.Count && startIdx < 40 && !await SegmentHasAudioAsync(valid[startIdx].Path))
+                startIdx++;
+            var hasAudio = startIdx < valid.Count;
+            var useSegs = hasAudio ? valid.GetRange(startIdx, valid.Count - startIdx) : valid;
+
+            var sb = new StringBuilder();
+            foreach (var s in useSegs)
                 sb.Append("file '").Append(s.Path.Replace("'", "'\\''")).Append("'\n");
             await File.WriteAllTextAsync(listPath, sb.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
-            var titles = await AudioTrackCountAsync(segs[0].Path) == 3 ? TrackTitleArgs("Микс", "Система", "Микрофон") : "";
+            var titles = hasAudio && await AudioTrackCountAsync(useSegs[0].Path) == 3 ? TrackTitleArgs("Микс", "Система", "Микрофон") : "";
+            var map = hasAudio ? "-map 0" : "-map 0:v";   // без валидного звука — только видео
             var args = $"-hide_banner -loglevel error -y -f concat -safe 0 -i {Ffmpeg.Q(listPath)} " +
-                       $"-map 0 -c copy {titles}-movflags +faststart {Ffmpeg.Q(outPath)}";
+                       $"{map} -c copy {titles}-movflags +faststart {Ffmpeg.Q(outPath)}";
             var r = await Ffmpeg.RunAsync(args);
             if (!r.Ok)
             {
@@ -569,6 +588,18 @@ public sealed class CaptureEngine : ICaptureEngine
             return r.StdOut.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct().Count();
         }
         catch { return 0; }
+    }
+
+    // true, если у сегмента есть реальные аудиоканалы. Сегмент с просадкой звука имеет дорожку,
+    // но channels=0 — на таком первом сегменте mp4-муксер падает при записи заголовка.
+    static async Task<bool> SegmentHasAudioAsync(string segmentPath)
+    {
+        try
+        {
+            var r = await Ffmpeg.ProbeAsync($"-v error -select_streams a:0 -show_entries stream=channels -of csv=p=0 {Ffmpeg.Q(segmentPath)}");
+            return int.TryParse(r.StdOut.Trim(), out var ch) && ch > 0;
+        }
+        catch { return false; }
     }
 
     static string LastNonEmptyLine(string text)
