@@ -20,6 +20,7 @@ public sealed class CaptureEngine : ICaptureEngine
     Timer? _tailTimer;
     long _tailPos;
     int _epoch;
+    string? _listPath;
     string? _activeEncoder;
     volatile bool _wantRunning;
 
@@ -150,6 +151,7 @@ public sealed class CaptureEngine : ICaptureEngine
 
         var wanted = duration ?? TimeSpan.FromSeconds(_settings.Current.ReplaySeconds);
         await _segments.WaitForIndexAsync(_segments.LastIndex + 1, TimeSpan.FromSeconds(2));
+        CatchUpSegments();
         var (segs, hold) = _segments.HoldNewest(_epoch, wanted.TotalSeconds);
         if (segs.Count == 0 || hold is null)
             throw new InvalidOperationException("Буфер пуст, подождите немного");
@@ -176,6 +178,7 @@ public sealed class CaptureEngine : ICaptureEngine
             _wantRunning = true;
             await EnsureCaptureRunningAsync();
 
+            CatchUpSegments();
             _recordingStartIndex = _segments.LastIndex + 1;
             _recordingHold = _segments.Hold(_recordingStartIndex, int.MaxValue);
             _recordingStopwatch = Stopwatch.StartNew();
@@ -191,6 +194,7 @@ public sealed class CaptureEngine : ICaptureEngine
         try
         {
             await _segments.WaitForIndexAsync(_segments.LastIndex + 1, TimeSpan.FromSeconds(2));
+            CatchUpSegments();
             var segs = _segments.Range(_recordingStartIndex, _segments.LastIndex);
             if (segs.Count == 0)
                 throw new InvalidOperationException("Не удалось сохранить запись: сегменты не найдены");
@@ -300,6 +304,7 @@ public sealed class CaptureEngine : ICaptureEngine
             var startNumber = _segments.LastIndex + 1;
             if (startNumber < 0) startNumber = 0;
             var listPath = Path.Combine(AppPaths.TempDir, $"segments_{Environment.ProcessId}_{_epoch + 1}.csv");
+            _listPath = listPath;
             try { File.Delete(listPath); } catch { }
 
             var args = CaptureCommand.BuildCapture(s, chosen.Spec, chosen.Variant, layout, t0us,
@@ -349,7 +354,7 @@ public sealed class CaptureEngine : ICaptureEngine
         _process = null;
         if (p is not null)
         {
-            try { await Ffmpeg.StopGracefullyAsync(p, TimeSpan.FromSeconds(5)).ConfigureAwait(false); }
+            try { await Ffmpeg.StopGracefullyAsync(p, TimeSpan.FromSeconds(5)); }
             catch (Exception ex) { Log.Error("Stopping capture process failed", ex); }
             finally { p.Dispose(); }
         }
@@ -385,7 +390,6 @@ public sealed class CaptureEngine : ICaptureEngine
                     try
                     {
                         if (!_wantRunning || !ReferenceEquals(process, _process)) return;
-                        await StopCaptureProcessAsync();   // освободить рухнувший процесс, аудио-сессию и stderr, иначе утечка и WASAPI остаётся открытым
                         await StartCaptureProcessAsync();
                     }
                     finally { _lifecycle.Release(); }
@@ -436,6 +440,26 @@ public sealed class CaptureEngine : ICaptureEngine
         {
             Log.Warn($"Reading segment list failed: {ex.Message}");
         }
+    }
+
+    // Защита от рассинхрона: перед сохранением записи/отката дочитываем ВЕСЬ список сегментов
+    // напрямую (не полагаясь на tail-таймер и _tailPos) и добавляем всё, что реально есть на диске.
+    // Иначе, если трекер отстал, LastIndex «зависает» и запись падает с «сегменты не найдены».
+    void CatchUpSegments()
+    {
+        var lp = _listPath;
+        if (lp is null || !File.Exists(lp)) return;
+        try
+        {
+            foreach (var line in File.ReadLines(lp))
+            {
+                if (!SegmentStore.TryParseCsvLine(line, out var name, out var start, out var end)) continue;
+                if (!SegmentStore.TryParseIndex(name, out var index)) continue;
+                var path = Path.Combine(AppPaths.BufferDir, name);
+                if (File.Exists(path)) _segments.Add(new SegmentInfo(index, _epoch, path, start, end, DateTime.UtcNow));
+            }
+        }
+        catch (Exception ex) { Log.Warn($"CatchUpSegments failed: {ex.Message}"); }
     }
 
     void PruneExpired(int epoch)
