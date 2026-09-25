@@ -194,10 +194,23 @@ public sealed class CaptureEngine : ICaptureEngine
         _recordingStopwatch?.Stop();
         try
         {
-            await _segments.WaitForIndexAsync(_segments.LastIndex + 1, TimeSpan.FromSeconds(2));
+            // Захват может писать сегменты медленнее реального времени (рвано на статичном экране),
+            // поэтому ждём, пока сегменты записи догонятся — они придут, просто с задержкой.
+            var recSecs = _recordingStopwatch?.Elapsed.TotalSeconds ?? 0;
+            var wantIndex = _recordingStartIndex + (int)Math.Max(0, Math.Floor(recSecs) - 1);
+            var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(Math.Max(6, recSecs + 12));
+            while (DateTime.UtcNow < deadline)
+            {
+                CatchUpSegments();
+                if (_segments.LastIndex >= wantIndex) break;
+                var before = _segments.LastIndex;
+                await Task.Delay(400);
+                CatchUpSegments();
+                if (_segments.LastIndex == before && _segments.LastIndex >= _recordingStartIndex) break;
+            }
             CatchUpSegments();
             var segs = _segments.Range(_recordingStartIndex, _segments.LastIndex);
-            Log.Info($"StopRec DIAG: startIndex={_recordingStartIndex} lastIndex={_segments.LastIndex} count={_segments.Count} range={segs.Count} listPath={_listPath}");
+            Log.Info($"StopRec DIAG: startIndex={_recordingStartIndex} lastIndex={_segments.LastIndex} want={wantIndex} range={segs.Count} listPath={_listPath}");
             if (segs.Count == 0)
                 throw new InvalidOperationException("Не удалось сохранить запись: сегменты не найдены");
 
