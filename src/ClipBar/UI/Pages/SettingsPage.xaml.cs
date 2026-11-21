@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Threading;
 using ClipBar.Core;
 
@@ -23,6 +24,26 @@ public partial class SettingsPage : Page
         BuildHotkeyRows();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+        // колесо над любым контролом страницы скроллит её, а не контрол
+        PreviewMouseWheel += (_, e) =>
+        {
+            if (e.Handled) return;
+            Scroller.ScrollToVerticalOffset(Scroller.VerticalOffset - e.Delta * 0.6);
+            e.Handled = true;
+        };
+        // если хост даёт бесконечную высоту — ScrollViewer растёт по контенту,
+        // скролл-бар не появляется и страницу нельзя прокрутить; прибиваем
+        // вьюпорт к высоте окна (минус тайтлбар и шапка)
+        Loaded += (_, _) =>
+        {
+            if (Window.GetWindow(this) is { } w)
+            {
+                ApplyHeight(w.ActualHeight);
+                w.SizeChanged += (_, e) => ApplyHeight(e.NewSize.Height);
+            }
+        };
+
+        void ApplyHeight(double h) => Scroller.MaxHeight = Math.Max(200, h - 150);
     }
 
     public bool ShowPageTitle

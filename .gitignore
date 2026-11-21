@@ -19,3 +19,4 @@ tools/*.exe
 # stray files
 src/ClipBar/-nologo
 *.log
+out/
