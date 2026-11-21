@@ -18,6 +18,8 @@ public sealed class HotkeyService : IHotkeyService
     bool _suspended;
 
     readonly Dictionary<int, HotkeyAction> _registered = new();
+    readonly MouseCaptureHook _mouseHook = new();
+    Dictionary<(ModifierKeys, MouseButton), HotkeyAction> _mouseCombos = new();
     Dictionary<HotkeyAction, HotkeyBinding> _last = new();
     HotkeyAction[] _failed = [];
 
@@ -101,6 +103,7 @@ public sealed class HotkeyService : IHotkeyService
         {
             UnregisterAll();
             _override?.Dispose();
+            _mouseHook.Dispose();
             if (_source is not null)
             {
                 _source.RemoveHook(WndProc);
@@ -113,13 +116,22 @@ public sealed class HotkeyService : IHotkeyService
 
     void RegisterLast()
     {
+        _mouseHook.Handler ??= OnMouseButton;
         var hwnd = _source!.Handle;
         var failed = new List<HotkeyAction>();
         var takenByOthers = new List<(HotkeyAction, HotkeyBinding)>();
         var seenCombos = new HashSet<(ModifierKeys, Key)>();
+        var mouseCombos = new Dictionary<(ModifierKeys, MouseButton), HotkeyAction>();
         foreach (var (action, binding) in _last)
         {
             if (binding.IsEmpty) continue;
+
+            // кнопки мыши RegisterHotKey не умеет — через low-level hook
+            if (binding.Mouse is { } mb)
+            {
+                mouseCombos[(binding.Modifiers, mb)] = action;
+                continue;
+            }
 
             if (!seenCombos.Add((binding.Modifiers, binding.Key)))
             {
@@ -160,7 +172,31 @@ public sealed class HotkeyService : IHotkeyService
         }));
         _override.Suspended = false;
         failed.AddRange(_override.Set(takenByOthers));
+        _mouseCombos = mouseCombos;
+        if (_mouseCombos.Count > 0) _mouseHook.Install(); else _mouseHook.Uninstall();
         _failed = failed.ToArray();
+    }
+
+    bool OnMouseButton(MouseButton btn, bool down, bool injected)
+    {
+        if (!down || injected || _suspended || _disposed) return false;
+        if (!_mouseCombos.TryGetValue((CurrentModifiers(), btn), out var action)) return false;
+        _dispatcher!.BeginInvoke(DispatcherPriority.Normal, () =>
+        {
+            try { Pressed?.Invoke(this, action); }
+            catch (Exception ex) { Log.Error($"Hotkey handler for {action} failed", ex); }
+        });
+        return false;   // не глотаем — та же кнопка должна срабатывать и в Discord
+    }
+
+    static ModifierKeys CurrentModifiers()
+    {
+        var m = ModifierKeys.None;
+        if ((GetAsyncKeyState(VK_MENU) & 0x8000) != 0) m |= ModifierKeys.Alt;
+        if ((GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0) m |= ModifierKeys.Control;
+        if ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0) m |= ModifierKeys.Shift;
+        if ((GetAsyncKeyState(VK_LWIN) & 0x8000) != 0 || (GetAsyncKeyState(VK_RWIN) & 0x8000) != 0) m |= ModifierKeys.Windows;
+        return m;
     }
 
     HotkeyOverride? _override;

@@ -47,6 +47,7 @@ public partial class HotkeyRecorderBox : UserControl
     const string TipNormal = "Нажмите, чтобы назначить сочетание";
 
     KeyboardCaptureHook? _hook;
+    MouseCaptureHook? _mouseHook;
     ModifierKeys _liveMods;
     Key _lastDownKey;
     bool? _prevSuspended;
@@ -162,6 +163,17 @@ public partial class HotkeyRecorderBox : UserControl
         return true;
     }
 
+    bool OnHookMouseButton(MouseButton btn, bool isDown, bool injected)
+    {
+        if (!IsRecording || !isDown || injected) return false;
+        Dispatcher.BeginInvoke(() =>
+        {
+            try { Commit(new HotkeyBinding(_liveMods, Key.None, btn)); }
+            catch (Exception ex) { Log.Error("HotkeyRecorderBox mouse commit failed", ex); }
+        });
+        return true;   // проглатываем — клик не должен уходить в приложение под курсором
+    }
+
     void HandleKey(Key key, bool isDown, ModifierKeys? reportedMods)
     {
         if (key == Key.None) return;
@@ -208,6 +220,8 @@ public partial class HotkeyRecorderBox : UserControl
         _hint = null;
         _hook ??= new KeyboardCaptureHook { Handler = OnHookKey };
         _hook.Install();
+        _mouseHook ??= new MouseCaptureHook { Handler = OnHookMouseButton };
+        _mouseHook.Install();
         SetValue(IsRecordingPropertyKey, true);
         UpdateVisual();
     }
@@ -216,6 +230,7 @@ public partial class HotkeyRecorderBox : UserControl
     {
         if (!IsRecording) return;
         _hook?.Uninstall();
+        _mouseHook?.Uninstall();
         _hintTimer?.Stop();
         _hint = null;
         SetValue(IsRecordingPropertyKey, false);
@@ -278,7 +293,7 @@ public partial class HotkeyRecorderBox : UserControl
         else if (!hotkey.IsEmpty)
         {
             foreach (var label in HotkeyKeys.ModifierLabels(hotkey.Modifiers)) AddChip(label, plusBefore: ChipsPanel.Children.Count > 0);
-            AddChip(HotkeyKeys.DisplayName(hotkey.Key), plusBefore: ChipsPanel.Children.Count > 0);
+            AddChip(hotkey.Mouse is { } mb ? MouseName(mb) : HotkeyKeys.DisplayName(hotkey.Key), plusBefore: ChipsPanel.Children.Count > 0);
         }
 
         var showPlaceholder = ChipsPanel.Children.Count == 0;
@@ -324,6 +339,16 @@ public partial class HotkeyRecorderBox : UserControl
         shell.Child = face;
         ChipsPanel.Children.Add(shell);
     }
+
+    static string MouseName(MouseButton b) => b switch
+    {
+        MouseButton.XButton1 => "Mouse4",
+        MouseButton.XButton2 => "Mouse5",
+        MouseButton.Middle => "Mouse3",
+        MouseButton.Left => "Mouse1",
+        MouseButton.Right => "Mouse2",
+        _ => b.ToString(),
+    };
 
     void AddPlus() => ChipsPanel.Children.Add(new TextBlock { Text = "+", Style = (Style)FindResource("ChipPlus") });
 

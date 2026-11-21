@@ -30,11 +30,11 @@ public static class HotkeyActionNames
     };
 }
 
-public sealed record HotkeyBinding(ModifierKeys Modifiers, Key Key)
+public sealed record HotkeyBinding(ModifierKeys Modifiers, Key Key, MouseButton? Mouse = null)
 {
     public static readonly HotkeyBinding None = new(ModifierKeys.None, Key.None);
 
-    public bool IsEmpty => Key == Key.None;
+    public bool IsEmpty => Key == Key.None && Mouse is null;
 
     public override string ToString()
     {
@@ -44,7 +44,7 @@ public sealed record HotkeyBinding(ModifierKeys Modifiers, Key Key)
         if (Modifiers.HasFlag(ModifierKeys.Alt)) parts.Add("Alt");
         if (Modifiers.HasFlag(ModifierKeys.Shift)) parts.Add("Shift");
         if (Modifiers.HasFlag(ModifierKeys.Windows)) parts.Add("Win");
-        parts.Add(KeyName(Key));
+        parts.Add(Key != Key.None ? KeyName(Key) : MouseName(Mouse!.Value));
         return string.Join("+", parts);
     }
 
@@ -53,6 +53,7 @@ public sealed record HotkeyBinding(ModifierKeys Modifiers, Key Key)
         if (string.IsNullOrWhiteSpace(text)) return None;
         var mods = ModifierKeys.None;
         var key = Key.None;
+        MouseButton? mouse = null;
         foreach (var raw in text.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             switch (raw.ToLowerInvariant())
@@ -61,11 +62,34 @@ public sealed record HotkeyBinding(ModifierKeys Modifiers, Key Key)
                 case "alt": mods |= ModifierKeys.Alt; break;
                 case "shift": mods |= ModifierKeys.Shift; break;
                 case "win" or "windows": mods |= ModifierKeys.Windows; break;
-                default: key = ParseKey(raw); break;
+                default:
+                    key = ParseKey(raw);
+                    if (key == Key.None) mouse = ParseMouse(raw);
+                    break;
             }
         }
-        return key == Key.None ? None : new HotkeyBinding(mods, key);
+        return key == Key.None && mouse is null ? None : new HotkeyBinding(mods, key, mouse);
     }
+
+    static string MouseName(MouseButton b) => b switch
+    {
+        MouseButton.Left => "Mouse1",
+        MouseButton.Right => "Mouse2",
+        MouseButton.Middle => "Mouse3",
+        MouseButton.XButton1 => "Mouse4",
+        MouseButton.XButton2 => "Mouse5",
+        _ => b.ToString(),
+    };
+
+    static MouseButton? ParseMouse(string s) => s.ToLowerInvariant() switch
+    {
+        "mouse1" => MouseButton.Left,
+        "mouse2" => MouseButton.Right,
+        "mouse3" or "mousemiddle" => MouseButton.Middle,
+        "mouse4" or "xbutton1" => MouseButton.XButton1,
+        "mouse5" or "xbutton2" => MouseButton.XButton2,
+        _ => null,
+    };
 
     static string KeyName(Key k) => k switch
     {

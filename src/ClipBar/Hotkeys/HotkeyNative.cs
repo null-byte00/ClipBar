@@ -22,7 +22,31 @@ internal static partial class HotkeyNative
     public const int ERROR_HOTKEY_NOT_REGISTERED = 1419;
 
     public const int WH_KEYBOARD_LL = 13;
+    public const int WH_MOUSE_LL = 14;
     public const uint LLKHF_INJECTED = 0x10;
+    public const uint LLMHF_INJECTED = 0x01;
+
+    public const int WM_MBUTTONDOWN = 0x0207;
+    public const int WM_MBUTTONUP = 0x0208;
+    public const int WM_XBUTTONDOWN = 0x020B;
+    public const int WM_XBUTTONUP = 0x020C;
+    public const int XBUTTON1 = 0x0001;
+    public const int XBUTTON2 = 0x0002;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct POINT { public int X, Y; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MSLLHOOKSTRUCT
+    {
+        public POINT pt;
+        public uint mouseData;
+        public uint flags;
+        public uint time;
+        public nuint dwExtraInfo;
+    }
+
+    public delegate nint LowLevelMouseProc(int nCode, nint wParam, nint lParam);
 
     public const int VK_SHIFT = 0x10, VK_CONTROL = 0x11, VK_MENU = 0x12, VK_LWIN = 0x5B, VK_RWIN = 0x5C;
 

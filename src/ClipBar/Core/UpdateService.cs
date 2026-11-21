@@ -88,9 +88,16 @@ public static class UpdateService
 
     public static async Task CheckAsync(bool userInitiated)
     {
-        if (!await Gate.WaitAsync(0)) return;
+        if (!await Gate.WaitAsync(0))
+        {
+            if (userInitiated)
+                AppServices.Notifier?.Show("Проверка уже идёт",
+                    "Обновление проверяется или качается в фоне — сообщу, когда будет готово", NotifyKind.Info);
+            return;
+        }
         try
         {
+            if (userInitiated) AppServices.Notifier?.Show("Проверяю обновления…", "", NotifyKind.Info);
             var latest = await GetLatestAsync();
             if (latest is null || latest.Version <= Current)
             {
@@ -98,6 +105,8 @@ public static class UpdateService
                 return;
             }
             Log.Info($"Update: {latest.Tag} available (current {Current})");
+            AppServices.Notifier?.Show($"Скачиваю ClipBar {latest.Version.ToString(3)}…",
+                $"~{latest.Size / 1048576} МБ — сообщу, когда будет готово", NotifyKind.Info);
             var path = await DownloadAsync(latest);
             if (path is null)
             {
