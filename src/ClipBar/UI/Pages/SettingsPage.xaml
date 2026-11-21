@@ -465,61 +465,11 @@
                     <ui:ToggleSwitch x:Name="SoundsToggle" Style="{StaticResource Toggle}" Click="OnSoundsToggleClick" />
                 </ui:CardControl>
 
-                <TextBlock x:Name="SecAbout" Style="{StaticResource SectionHeader}" Text="О программе" />
-
-                <Border Background="{StaticResource CB.Card}" BorderBrush="{StaticResource CB.Divider}" BorderThickness="1" CornerRadius="8" Padding="16,16" Margin="0,0,0,4">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Border Width="52" Height="52" CornerRadius="12" Background="{StaticResource CB.Record}" VerticalAlignment="Center" Margin="0,0,16,0">
-                            <ui:SymbolIcon Symbol="Record24" Filled="True" FontSize="26" Foreground="White" />
-                        </Border>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource CB.Text.Big}" FontSize="20" Text="ClipBar" VerticalAlignment="Bottom" />
-                                <TextBlock x:Name="VersionText" Style="{StaticResource CB.Text.Caption}" Margin="10,0,0,0" VerticalAlignment="Center" Text="Версия 1.0.0" />
-                            </StackPanel>
-                            <TextBlock Style="{StaticResource CB.Text.Caption}" TextWrapping="Wrap" Margin="0,3,0,0"
-                                       Text="Лёгкая запись экрана с мгновенным откатом — как Game Bar, но для всего рабочего стола. Видео кодирует видеокарта, процессор почти не нагружается." />
-                            <TextBlock Style="{StaticResource CB.Text.Body}" Margin="0,6,0,0">
-                                <Run Text="by" Foreground="{StaticResource CB.TextSecondary}" />
-                                <Run Text="@lumaseller" Foreground="#FFFF6B7A" FontWeight="SemiBold" />
-                            </TextBlock>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-
-                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon ArrowSync24}">
+                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon Eye24}">
                     <ui:CardControl.Header>
-                        <pages:SettingsRowHeader Title="Обновления" Description="ClipBar сам скачивает новые версии с GitHub и ставит их при запуске" />
+                        <pages:SettingsRowHeader Title="Оверлей в записи" Description="Панель Alt+Z и окно области скриншота будут видны на видео и скриншотах" />
                     </ui:CardControl.Header>
-                    <Button x:Name="CheckUpdatesButton" Style="{StaticResource FlatButton}" Click="OnCheckUpdatesClick" Content="Проверить сейчас" />
-                </ui:CardControl>
-
-                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon Code24}">
-                    <ui:CardControl.Header>
-                        <pages:SettingsRowHeader x:Name="FfmpegHeader" Title="FFmpeg" Description="Определяю версию…" />
-                    </ui:CardControl.Header>
-                </ui:CardControl>
-
-                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon DeveloperBoard24}">
-                    <ui:CardControl.Header>
-                        <pages:SettingsRowHeader x:Name="GpuHeader" Title="Видеокарта" Description="…" />
-                    </ui:CardControl.Header>
-                </ui:CardControl>
-
-                <ui:CardControl Style="{StaticResource Row}" Icon="{ui:SymbolIcon DocumentText24}">
-                    <ui:CardControl.Header>
-                        <pages:SettingsRowHeader Title="Журнал" Description="Если что-то пошло не так — в логах есть причина. Пригодятся при обращении за помощью" />
-                    </ui:CardControl.Header>
-                    <Button x:Name="OpenLogsButton" Style="{StaticResource FlatButton}" Click="OnOpenLogsClick">
-                        <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" Margin="0,0,8,0" />
-                            <TextBlock Text="Открыть папку логов" />
-                        </StackPanel>
-                    </Button>
+                    <ui:ToggleSwitch x:Name="OverlayCaptureToggle" Style="{StaticResource Toggle}" Click="OnOverlayCaptureToggleClick" />
                 </ui:CardControl>
 
             </StackPanel>

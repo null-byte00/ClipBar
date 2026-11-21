@@ -1,26 +1,39 @@
+using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Navigation;
 using ClipBar.Core;
 
 namespace ClipBar.UI.Pages;
 
-public partial class SettingsPage
+public partial class AboutPage
 {
-    bool _aboutLoaded;
+    bool _loaded;
 
-    void LoadAboutStatic()
+    public AboutPage()
     {
-        var asm = typeof(SettingsPage).Assembly;
+        InitializeComponent();
+        Loaded += OnLoaded;
+    }
+
+    void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        if (_loaded) return;
+        _loaded = true;
+        LoadStatic();
+        _ = LoadAsync();
+    }
+
+    void LoadStatic()
+    {
+        var asm = typeof(AboutPage).Assembly;
         var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
         var version = !string.IsNullOrWhiteSpace(info) ? info.Split('+')[0] : asm.GetName().Version?.ToString(3) ?? "1.0.0";
         VersionText.Text = $"Версия {version} · Windows 11 · .NET {Environment.Version.Major}";
     }
 
-    async Task LoadAboutAsync()
+    async Task LoadAsync()
     {
-        if (_aboutLoaded) return;
-        _aboutLoaded = true;
-
         try
         {
             var gpus = await Task.Run(SettingsNative.GetGpuNames);
@@ -63,7 +76,18 @@ public partial class SettingsPage
         return $"{parts[0]} ({flavour.Replace('-', ',').Replace(",", ", ")})";
     }
 
-    void OnOpenLogsClick(object sender, RoutedEventArgs e) => OpenInExplorer(AppPaths.LogsDir);
+    void OnGithubClick(object sender, RequestNavigateEventArgs e)
+    {
+        try { Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true }); }
+        catch (Exception ex) { Log.Warn("Open GitHub link failed: " + ex.Message); }
+        e.Handled = true;
+    }
+
+    void OnOpenLogsClick(object sender, RoutedEventArgs e)
+    {
+        try { Process.Start(new ProcessStartInfo("explorer.exe", "\"" + AppPaths.LogsDir + "\"") { UseShellExecute = true }); }
+        catch (Exception ex) { Log.Warn("Open logs folder failed: " + ex.Message); }
+    }
 
     async void OnCheckUpdatesClick(object sender, RoutedEventArgs e)
     {

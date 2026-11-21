@@ -62,7 +62,6 @@ public partial class SettingsPage : Page
             "hotkeys" => SecHotkeys,
             "folder" => SecFolder,
             "general" => SecGeneral,
-            "about" => SecAbout,
             _ => null,
         };
         if (header is null) return;
@@ -89,7 +88,6 @@ public partial class SettingsPage : Page
             _ = LoadEncodersAsync();
             _ = LoadAudioDevicesAsync();
             _ = LoadFreeSpaceAsync();
-            _ = LoadAboutAsync();
         }
         catch (Exception ex)
         {
@@ -113,7 +111,6 @@ public partial class SettingsPage : Page
             LoadHotkeys();
             LoadFolder();
             LoadGeneral();
-            LoadAboutStatic();
             UpdateEstimate();
         });
     }

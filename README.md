@@ -7,7 +7,7 @@
 **Запись экрана для Windows с мгновенным повтором.**
 Как ShadowPlay и Game Bar — только лёгкая, для всего рабочего стола и с нормальным редактором.
 
-by **@lumaseller**
+by **[@null-byte00](https://github.com/null-byte00)**
 
 [![Release](https://img.shields.io/github/v/release/null-byte00/ClipBar?style=for-the-badge&color=e81123&label=версия)](https://github.com/null-byte00/ClipBar/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/null-byte00/ClipBar/total?style=for-the-badge&color=2b2b2b&label=загрузок)](https://github.com/null-byte00/ClipBar/releases)
@@ -137,4 +137,4 @@ ClipBar запускает [FFmpeg](https://ffmpeg.org) как отдельну�
 
 <br>
 
-<div align="center"><sub>ClipBar by @lumaseller</sub></div>
+<div align="center"><sub>[ClipBar](https://github.com/null-byte00/ClipBar)</sub></div>

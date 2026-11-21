@@ -36,10 +36,8 @@
                         <TextBlock x:Name="VersionText" Text="1.0.0" FontSize="13" Foreground="{StaticResource TextSecondary}"
                                    VerticalAlignment="Bottom" Margin="8,0,0,5" />
                     </StackPanel>
-                    <TextBlock FontSize="13" Foreground="{StaticResource TextSecondary}">
-                        <Run Text="Запись экрана с мгновенным повтором · by" />
-                        <Run Text="@lumaseller" Foreground="#FFFF6B7A" FontWeight="SemiBold" />
-                    </TextBlock>
+                    <TextBlock FontSize="13" Foreground="{StaticResource TextSecondary}"
+                               Text="Запись экрана с мгновенным повтором" />
                 </StackPanel>
             </StackPanel>
 

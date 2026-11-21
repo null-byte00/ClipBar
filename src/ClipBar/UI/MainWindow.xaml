@@ -17,7 +17,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <ui:TitleBar x:Name="TitleBar" Grid.Row="0" Title="ClipBar  ·  by @lumaseller"
+        <ui:TitleBar x:Name="TitleBar" Grid.Row="0" Title="ClipBar"
                      CloseWindowByDoubleClickOnIcon="False">
             <ui:TitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/Assets/clipbar.png" Width="18" Height="18" />
@@ -44,6 +44,13 @@
                                        NavigationCacheMode="Required">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="ImageMultiple24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="О программе" TargetPageTag="about"
+                                       TargetPageType="{x:Type pages:AboutPage}"
+                                       NavigationCacheMode="Required">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="Info24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>

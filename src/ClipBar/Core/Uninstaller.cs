@@ -61,7 +61,7 @@ public static class Uninstaller
             }
 
             if (!quiet)
-                await new Wpf.Ui.Controls.MessageBox { Title = "ClipBar удалён", Content = "Спасибо, что пользовался ClipBar by @lumaseller!", CloseButtonText = "OK" }.ShowDialogAsync();
+                await new Wpf.Ui.Controls.MessageBox { Title = "ClipBar удалён", Content = "Спасибо, что пользовался ClipBar!", CloseButtonText = "OK" }.ShowDialogAsync();
         }
         catch (Exception ex)
         {

@@ -17,8 +17,28 @@ public partial class OverlayWindow : Window, IOverlayHost
 {
     enum OverlayState { Hidden, Visible, Hiding }
 
-    public static bool ExcludeFromCapture { get; set; } =
-        Environment.GetEnvironmentVariable("CLIPBAR_OVERLAY_CAPTURABLE") != "1";
+    static bool _excludeFromCapture = Environment.GetEnvironmentVariable("CLIPBAR_OVERLAY_CAPTURABLE") != "1";
+    static OverlayWindow? s_instance;
+
+    // скрывать оверлей из захвата; сеттер применяется к живому окну сразу
+    public static bool ExcludeFromCapture
+    {
+        get => _excludeFromCapture;
+        set
+        {
+            _excludeFromCapture = value;
+            var inst = s_instance;
+            if (inst is not null)
+                inst.Dispatcher.Invoke(inst.ApplyCaptureAffinity);
+        }
+    }
+
+    void ApplyCaptureAffinity()
+    {
+        if (_hwnd == IntPtr.Zero) return;
+        _excluded = OverlayNative.SetWindowDisplayAffinity(_hwnd,
+            _excludeFromCapture ? OverlayNative.WDA_EXCLUDEFROMCAPTURE : OverlayNative.WDA_NONE);
+    }
 
     public bool AllowRealClose { get; set; }
 
@@ -307,7 +327,7 @@ public partial class OverlayWindow : Window, IOverlayHost
             var buffered = engine?.BufferedDuration ?? TimeSpan.Zero;
             if (buffered > total) buffered = total;
 
-            ClockText.Text = $"by @lumaseller  ·  {DateTime.Now:HH:mm}";
+            ClockText.Text = $"ClipBar  ·  {DateTime.Now:HH:mm}";
 
             ReplayTileStatus.Text = replayOn
                 ? $"Сохранить · {Actions.HotkeyText(HotkeyAction.SaveReplay)}"
@@ -447,11 +467,12 @@ public partial class OverlayWindow : Window, IOverlayHost
         _hwnd = new WindowInteropHelper(this).Handle;
         OverlayNative.MakeToolWindow(_hwnd);
         EnableGpuTransparency(_hwnd);
-        if (ExcludeFromCapture)
-        {
-            _excluded = OverlayNative.SetWindowDisplayAffinity(_hwnd, OverlayNative.WDA_EXCLUDEFROMCAPTURE);
-            if (!_excluded) Log.Warn("SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE) failed — overlay will be visible in captures");
-        }
+        // env-флаг перебивает настройку (для отладки), иначе — из настроек
+        if (Environment.GetEnvironmentVariable("CLIPBAR_OVERLAY_CAPTURABLE") != "1"
+            && AppServices.Settings?.Current is { } s)
+            _excludeFromCapture = !s.OverlayVisibleInCapture;
+        s_instance = this;
+        ApplyCaptureAffinity();
     }
 
     void EnableGpuTransparency(IntPtr hwnd)

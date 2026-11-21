@@ -11,7 +11,7 @@ public sealed record InstallOptions(string Directory, bool DesktopShortcut, bool
 public static class Installer
 {
     public const string AppName = "ClipBar";
-    public const string Publisher = "@lumaseller";
+    public const string Publisher = "null-byte00";
     const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\ClipBar";
     const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
 

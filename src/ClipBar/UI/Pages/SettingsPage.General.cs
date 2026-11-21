@@ -1,5 +1,6 @@
 using System.Windows;
 using ClipBar.Core;
+using ClipBar.UI.Overlay;
 using Microsoft.Win32;
 
 namespace ClipBar.UI.Pages;
@@ -14,6 +15,7 @@ public partial class SettingsPage
         MinimizedToggle.IsChecked = S.StartMinimized;
         NotificationsToggle.IsChecked = S.ShowNotifications;
         SoundsToggle.IsChecked = S.PlaySounds;
+        OverlayCaptureToggle.IsChecked = S.OverlayVisibleInCapture;
     }
 
     void OnStartupToggleClick(object sender, RoutedEventArgs e)
@@ -52,6 +54,14 @@ public partial class SettingsPage
     {
         if (_loading) return;
         S.PlaySounds = SoundsToggle.IsChecked == true;
+        Save();
+    }
+
+    void OnOverlayCaptureToggleClick(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        S.OverlayVisibleInCapture = OverlayCaptureToggle.IsChecked == true;
+        OverlayWindow.ExcludeFromCapture = !S.OverlayVisibleInCapture;
         Save();
     }
 }

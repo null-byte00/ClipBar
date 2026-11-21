@@ -60,6 +60,7 @@ internal static partial class OverlayNative
     public static partial bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint flags);
     [LibraryImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] public static partial bool GetWindowRect(IntPtr hWnd, out RECT rect);
 
+    public const uint WDA_NONE = 0x00000000;
     public const uint WDA_EXCLUDEFROMCAPTURE = 0x00000011;
     [LibraryImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool SetWindowDisplayAffinity(IntPtr hWnd, uint affinity);

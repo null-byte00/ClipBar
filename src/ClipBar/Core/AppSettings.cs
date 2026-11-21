@@ -29,6 +29,8 @@ public sealed class AppSettings
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "ClipBar");
     public bool UseAppNameInFileName { get; set; } = true;
 
+    public bool OverlayVisibleInCapture { get; set; }
+
     public bool LaunchAtStartup { get; set; } = true;
     public bool StartMinimized { get; set; } = true;
     public bool ShowNotifications { get; set; } = true;
