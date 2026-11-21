@@ -590,14 +590,15 @@ public sealed class CaptureEngine : ICaptureEngine
         catch { return 0; }
     }
 
-    // true, если у сегмента есть реальные аудиоканалы. Сегмент с просадкой звука имеет дорожку,
-    // но channels=0 — на таком первом сегменте mp4-муксер падает при записи заголовка.
+    // true, если у сегмента есть реальные аудиопакеты. Пустой AAC-стрим (0 каналов) ломает
+    // заголовок mp4; probe по stream=channels ненадёжен (mpegts дублирует программы →
+    // две строки), поэтому проверяем наличие хотя бы одного аудиопакета.
     static async Task<bool> SegmentHasAudioAsync(string segmentPath)
     {
         try
         {
-            var r = await Ffmpeg.ProbeAsync($"-v error -select_streams a:0 -show_entries stream=channels -of csv=p=0 {Ffmpeg.Q(segmentPath)}");
-            return int.TryParse(r.StdOut.Trim(), out var ch) && ch > 0;
+            var r = await Ffmpeg.ProbeAsync($"-v error -select_streams a:0 -read_intervals %+#1 -show_entries packet=pts -of csv=p=0 {Ffmpeg.Q(segmentPath)}");
+            return !string.IsNullOrWhiteSpace(r.StdOut);
         }
         catch { return false; }
     }

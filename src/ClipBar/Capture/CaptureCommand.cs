@@ -52,7 +52,7 @@ internal static class CaptureCommand
         var fps = Math.Clamp(s.Fps, 10, 240);
         var sb = new StringBuilder();
         sb.Append($"ddagrab=output_idx={s.MonitorIndex}:framerate={fps}:draw_mouse={(s.CaptureCursor ? 1 : 0)}");
-        sb.Append($",setpts=PTS-STARTPTS+(RTCSTART-{I(t0us)})/(1000000*TB)");
+        sb.Append(",setpts=PTS-STARTPTS");
 
         var scale = s.OutputHeight > 0 && nativeHeight > 0 && s.OutputHeight < nativeHeight;
         var outH = scale ? s.OutputHeight & ~1 : 0;
@@ -101,7 +101,7 @@ internal static class CaptureCommand
 
     static string AudioInput(string pipe, int offsetMs)
     {
-        var sb = new StringBuilder("-use_wallclock_as_timestamps 1 -thread_queue_size 4096 -f f32le -ar 48000 -ac 2");
+        var sb = new StringBuilder("-use_wallclock_as_timestamps 0 -thread_queue_size 1024 -f f32le -ar 48000 -ac 2");
         if (offsetMs != 0) sb.Append($" -itsoffset {F(offsetMs / 1000.0)}");
         sb.Append($" -i {Ffmpeg.Q(pipe)}");
         return sb.ToString();
@@ -109,7 +109,7 @@ internal static class CaptureCommand
 
     static string AudioFilter(AudioLayout a, int firstInput, long t0us)
     {
-        var anchor = $"asetpts=STARTPTS-{I(t0us)}/(1000000*TB)+N/SR/TB,aresample=async=1:min_hard_comp=0.01:first_pts=0";
+        var anchor = "asetpts=N/SR/TB,aresample=async=1:min_hard_comp=0:first_pts=0";
         var sb = new StringBuilder();
         var i = firstInput;
         if (a.HasSystem && a.HasMic)

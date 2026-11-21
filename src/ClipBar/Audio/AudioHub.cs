@@ -8,7 +8,7 @@ namespace ClipBar.Audio;
 
 public sealed class AudioHub : IAudioHub
 {
-    const int RingSeconds = 2;
+    const int RingSeconds = 4;
     const int RingCapacityFrames = AudioFormatConverter.TargetSampleRate * RingSeconds;
     const int PumpChunkMs = 15;
 
@@ -362,13 +362,24 @@ public sealed class AudioHub : IAudioHub
 
             var buf = new float[FramesPerChunk * 2];
             var bytes = new byte[buf.Length * sizeof(float)];
-            var delay = TimeSpan.FromMilliseconds(PumpChunkMs);
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            long written = 0;
 
             IntPtr mmcss = AudioNative.EnterProAudio();
             try
             {
                 while (!token.IsCancellationRequested)
                 {
+                    // Пейсинг по wall-clock, а не по Task.Delay: квантование таймера (~15.6мс)
+                    // делало насос медленнее реального времени — звук отставал и шёл залпами.
+                    long due = (long)(clock.Elapsed.TotalMilliseconds / PumpChunkMs);
+                    if (written > due)
+                    {
+                        try { await Task.Delay(1, token).ConfigureAwait(false); }
+                        catch (OperationCanceledException) { break; }
+                        continue;
+                    }
+
                     int frames = _source.Available ? _ring.Read(buf) : 0;
                     if (frames < FramesPerChunk)
                         Array.Clear(buf, frames * 2, (FramesPerChunk - frames) * 2);
@@ -386,9 +397,7 @@ public sealed class AudioHub : IAudioHub
                     {
                         break;
                     }
-
-                    try { await Task.Delay(delay, token).ConfigureAwait(false); }
-                    catch (OperationCanceledException) { break; }
+                    written++;
                 }
             }
             catch (Exception ex)
