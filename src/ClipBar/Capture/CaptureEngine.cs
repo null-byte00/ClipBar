@@ -540,9 +540,13 @@ public sealed class CaptureEngine : ICaptureEngine
             // ПЕРВЫЙ сегмент должен иметь валидный звук: если там просадка звука (0 каналов),
             // mp4-муксер не может записать заголовок AAC. Пропускаем ведущие сегменты без звука.
             var startIdx = 0;
-            while (startIdx < valid.Count && startIdx < 40 && !await SegmentHasAudioAsync(valid[startIdx].Path))
+            var foundAudio = false;
+            while (startIdx < valid.Count && startIdx < 40)
+            {
+                if (await SegmentHasAudioAsync(valid[startIdx].Path)) { foundAudio = true; break; }
                 startIdx++;
-            var hasAudio = startIdx < valid.Count;
+            }
+            var hasAudio = foundAudio;
             var useSegs = hasAudio ? valid.GetRange(startIdx, valid.Count - startIdx) : valid;
 
             var sb = new StringBuilder();

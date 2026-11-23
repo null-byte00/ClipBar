@@ -391,6 +391,7 @@ public sealed class AudioHub : IAudioHub
                     }
                     catch (IOException)
                     {
+                        Log.Warn("AudioHub: pipe pump stopped — ffmpeg closed the pipe (звук в записи пропадёт)");
                         break;
                     }
                     catch (ObjectDisposedException)
@@ -408,6 +409,8 @@ public sealed class AudioHub : IAudioHub
             {
                 AudioNative.LeaveMmcss(mmcss);
             }
+            if (!token.IsCancellationRequested)
+                Log.Warn("AudioHub: pipe pump exited while capture still running");
         }
 
         public void Dispose()
