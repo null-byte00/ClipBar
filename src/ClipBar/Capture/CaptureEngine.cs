@@ -345,6 +345,8 @@ public sealed class CaptureEngine : ICaptureEngine
             _stderr = stderr;
             _activeEncoder = chosen.Id;
             _tailPos = 0;
+            _audioCheckTicks = 0;
+            _audioMisses = 0;
             _tailTimer?.Dispose();
             _tailTimer = new Timer(_ => TailSegmentList(listPath, epoch), null, 250, 250);
 
@@ -449,12 +451,60 @@ public sealed class CaptureEngine : ICaptureEngine
             {
                 if (State == EngineState.Starting) SetState(EngineState.Buffering);
                 PruneExpired(epoch);
+                // вотчдог звука: раз в ~10с проверяем, что в сегментах есть аудиопакеты
+                if (++_audioCheckTicks >= 40 && !_audioProbing)
+                    _ = AudioWatchdogAsync(epoch);
             }
         }
         catch (Exception ex)
         {
             Log.Warn($"Reading segment list failed: {ex.Message}");
         }
+    }
+
+    int _audioCheckTicks;
+    int _audioMisses;
+    bool _audioProbing;
+
+    // Звук может тихо умереть (ffmpeg продолжает писать видео без аудиопакетов).
+    // Два пропуска подряд → перезапускаем захват, звук возвращается.
+    async Task AudioWatchdogAsync(int epoch)
+    {
+        _audioProbing = true;
+        try
+        {
+            var s = _settings.Current;
+            if (!s.RecordSystemAudio && !s.RecordMic) { _audioMisses = 0; return; }
+            var all = _segments.OfEpoch(epoch);
+            if (all.Count < 6) return;
+            var probe = all[^2];   // самый свежий может быть ещё не дописан
+            if (!File.Exists(probe.Path)) return;
+            if (await SegmentHasAudioAsync(probe.Path)) { _audioMisses = 0; return; }
+
+            _audioMisses++;
+            Log.Warn($"Audio watchdog: no audio packets in {Path.GetFileName(probe.Path)} (miss {_audioMisses})");
+            if (_audioMisses < 2 || epoch != _epoch || !_wantRunning || _restartScheduled) return;
+            _restartScheduled = true;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _lifecycle.WaitAsync();
+                    try
+                    {
+                        if (!_wantRunning || epoch != _epoch) return;
+                        Log.Warn("Audio watchdog: restarting capture (audio died)");
+                        await StopCaptureProcessAsync();
+                        await StartCaptureProcessAsync();
+                    }
+                    finally { _lifecycle.Release(); }
+                }
+                catch (Exception ex) { Log.Error("Audio watchdog restart failed", ex); }
+                finally { _restartScheduled = false; _audioMisses = 0; }
+            });
+        }
+        catch (Exception ex) { Log.Warn($"Audio watchdog failed: {ex.Message}"); }
+        finally { _audioProbing = false; }
     }
 
     // Защита от рассинхрона: перед сохранением записи/отката дочитываем ВЕСЬ список сегментов

@@ -47,9 +47,18 @@ internal static class CaptureCommand
     static string I(long v) => v.ToString(CultureInfo.InvariantCulture);
     static string F(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
 
-    public static string VideoFilter(AppSettings s, EncoderSpec enc, int variant, long t0us, int nativeHeight)
+    // ddagrab не может выдать больше кадров, чем герцовка монитора — просьба
+    // выше неё ломает захват, поэтому реальный fps ограничен дисплеем.
+    static int EffectiveFps(AppSettings s)
     {
         var fps = Math.Clamp(s.Fps, 10, 240);
+        var hz = ScreenGrabber.GetRefreshHz(s.MonitorIndex);
+        return hz > 0 ? Math.Min(fps, hz) : fps;
+    }
+
+    public static string VideoFilter(AppSettings s, EncoderSpec enc, int variant, long t0us, int nativeHeight)
+    {
+        var fps = EffectiveFps(s);
         var sb = new StringBuilder();
         sb.Append($"ddagrab=output_idx={s.MonitorIndex}:framerate={fps}:draw_mouse={(s.CaptureCursor ? 1 : 0)}");
         sb.Append(",setpts=PTS-STARTPTS");
@@ -86,7 +95,7 @@ internal static class CaptureCommand
 
     public static string EncoderOptions(AppSettings s, EncoderSpec enc)
     {
-        var fps = Math.Clamp(s.Fps, 10, 240);
+        var fps = EffectiveFps(s);
         var kb = Math.Clamp(s.VideoBitrateKbps, 500, 200_000);
         var rc = $"-b:v {kb}k -maxrate {kb * 3 / 2}k -bufsize {kb * 2}k -bf 0 -g {fps}";
         var opts = enc.Family switch

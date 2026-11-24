@@ -22,6 +22,7 @@ public partial class App : Application
     TrayIconController? _tray;
     ShellService? _shell;
     ToastNotifier? _toasts;
+    UI.Overlay.RecordingHud? _hud;
     Dictionary<HotkeyAction, string>? _appliedHotkeys;
     bool _exiting, _cleanedUp;
 
@@ -75,6 +76,7 @@ public partial class App : Application
 
             AppServices.Audio = new Audio.AudioHub(settings);
             AppServices.Engine = new Capture.CaptureEngine(settings, AppServices.Audio);
+            _hud = new UI.Overlay.RecordingHud(AppServices.Engine);
             AppServices.Library = new Library.ClipLibrary(settings);
             _toasts = new ToastNotifier();
             AppServices.Notifier = _toasts;
@@ -249,6 +251,7 @@ public partial class App : Application
         Try(() => AppServices.Engine?.Dispose(), "engine");
         Try(() => AppServices.Audio?.Dispose(), "audio");
         Try(() => _toasts?.Dispose(), "toasts");
+        Try(() => _hud?.Close(), "hud");
         Try(() => _shell?.CloseWindows(), "windows");
         Log.Info("Services disposed");
 

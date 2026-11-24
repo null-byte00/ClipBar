@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using ClipBar.Capture;
 using ClipBar.Core;
 using Wpf.Ui.Controls;
 
@@ -22,7 +23,10 @@ public partial class SettingsPage
         foreach (var (label, kbps) in QualityPresets) QualityCombo.Items.Add(new Choice<int>(label, kbps));
         QualityCombo.Items.Add(new Choice<int>("Своё", CustomQuality));
 
-        foreach (var fps in new[] { 30, 60, 120, 144 }) FpsCombo.Items.Add(new Choice<int>($"{fps} к/с", fps));
+        // показываем реальный потолок — больше герцовки монитора захват не даст
+        var hz = ScreenGrabber.GetRefreshHz(S.MonitorIndex);
+        foreach (var fps in new[] { 30, 60, 120, 144 })
+            FpsCombo.Items.Add(new Choice<int>(hz > 0 && fps > hz ? $"{fps} к/с (макс {hz})" : $"{fps} к/с", fps));
 
         ResolutionCombo.Items.Add(new Choice<int>("Исходное", 0));
         ResolutionCombo.Items.Add(new Choice<int>("1440p · QHD", 1440));

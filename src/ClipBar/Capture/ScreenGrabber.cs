@@ -40,6 +40,29 @@ internal static class ScreenGrabber
         return mons.Find(m => m.Primary) is { Width: > 0 } p ? p : mons[0];
     }
 
+    // Реальная герцовка монитора — ddagrab не выдаст кадров больше, чем обновляется
+    // дисплей, и просьба больше её ломает захват. 0 — не удалось определить.
+    public static int GetRefreshHz(int index)
+    {
+        try
+        {
+            var devices = new List<string>();
+            EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, (IntPtr hMon, IntPtr _, ref RECT _, IntPtr _) =>
+            {
+                var mi = new MONITORINFOEX { cbSize = Marshal.SizeOf<MONITORINFOEX>() };
+                if (GetMonitorInfo(hMon, ref mi))
+                    devices.Add(mi.szDevice);
+                return true;
+            }, IntPtr.Zero);
+            if (devices.Count == 0) return 0;
+
+            var dev = index >= 0 && index < devices.Count ? devices[index] : devices[0];
+            var dm = new DEVMODE { dmSize = (short)Marshal.SizeOf<DEVMODE>() };
+            return EnumDisplaySettings(dev, ENUM_CURRENT_SETTINGS, ref dm) ? dm.dmDisplayFrequency : 0;
+        }
+        catch { return 0; }
+    }
+
     public static void SavePng(int monitorIndex, string path)
     {
         var old = SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
@@ -124,6 +147,26 @@ internal static class ScreenGrabber
 
     [StructLayout(LayoutKind.Sequential)] struct RECT { public int Left, Top, Right, Bottom; }
     [StructLayout(LayoutKind.Sequential)] struct MONITORINFO { public int cbSize; public RECT rcMonitor, rcWork; public uint dwFlags; }
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    struct MONITORINFOEX
+    {
+        public int cbSize; public RECT rcMonitor, rcWork; public uint dwFlags;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string szDevice;
+    }
+    const int ENUM_CURRENT_SETTINGS = -1;
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    struct DEVMODE
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmDeviceName;
+        public short dmSpecVersion, dmDriverVersion, dmSize, dmDriverExtra;
+        public int dmFields;
+        public int dmPositionX, dmPositionY;   // union с orientation/fixedoutput — те же 8 байт
+        public short dmColor, dmDuplex, dmYResolution, dmTTOption, dmCollate;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmFormName;
+        public short dmLogPixels;
+        public int dmBitsPerPel, dmPelsWidth, dmPelsHeight, dmDisplayFlags, dmDisplayFrequency;
+        public int dmICMMethod, dmICMIntent, dmMediaType, dmDitherType, dmReserved1, dmReserved2, dmPanningWidth, dmPanningHeight;
+    }
     [StructLayout(LayoutKind.Sequential)]
     struct BITMAPINFO
     {
@@ -135,6 +178,8 @@ internal static class ScreenGrabber
     [DllImport("user32.dll")] static extern IntPtr SetThreadDpiAwarenessContext(IntPtr ctx);
     [DllImport("user32.dll")] static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr clip, MonitorEnumProc cb, IntPtr data);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool GetMonitorInfo(IntPtr hMon, ref MONITORINFO mi);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool GetMonitorInfo(IntPtr hMon, ref MONITORINFOEX mi);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool EnumDisplaySettings(string lpszDeviceName, int iModeNum, ref DEVMODE lpDevMode);
     [DllImport("user32.dll")] static extern int GetSystemMetrics(int index);
     [DllImport("user32.dll")] static extern IntPtr GetDC(IntPtr hwnd);
     [DllImport("user32.dll")] static extern int ReleaseDC(IntPtr hwnd, IntPtr dc);
