@@ -18,7 +18,7 @@ public partial class RegionCaptureWindow : Window
 {
     static RegionCaptureWindow? _open;
 
-    enum Tool { Move, Pen, Marker, Line, Arrow, Rect, Text, Blur }
+    enum Tool { Move, Pen, Marker, Line, Arrow, Rect, Text, Blur, Eyedropper }
     enum Drag { None, NewSelection, MoveSelection, Resize, Draw }
 
     const double HandleGrab = 8;
@@ -94,6 +94,13 @@ public partial class RegionCaptureWindow : Window
         var p = e.GetPosition(Root);
         CommitText();
 
+        if (_tool == Tool.Eyedropper)
+        {
+            PickColor(p);
+            e.Handled = true;
+            return;
+        }
+
         if (!_sel.IsEmpty && _tool != Tool.Move && _sel.Contains(p))
         {
             BeginDraw(p);
@@ -164,7 +171,9 @@ public partial class RegionCaptureWindow : Window
             case Drag.NewSelection:
                 if (_sel.Width < 4 || _sel.Height < 4)
                 {
-                    _sel = Rect.Empty; UpdateSelectionVisuals(); HelpBadge.Visibility = Visibility.Visible;
+                    _sel = Rect.Empty; UpdateSelectionVisuals();
+                    HelpBadgeText.Text = "Выдели область мышкой  ·  Esc — отмена";
+                    HelpBadge.Visibility = Visibility.Visible;
                     return;
                 }
                 Toolbar.Visibility = Visibility.Visible;
@@ -203,6 +212,7 @@ public partial class RegionCaptureWindow : Window
 
     void UpdateHoverCursor(Point p)
     {
+        if (_tool == Tool.Eyedropper) { Cursor = Cursors.Cross; return; }
         if (_sel.IsEmpty) { Cursor = Cursors.Cross; return; }
         if (_tool != Tool.Move) { Cursor = _sel.Contains(p) ? (_tool == Tool.Text ? Cursors.IBeam : Cursors.Pen) : Cursors.Arrow; return; }
         Cursor = HitEdges(p) switch
@@ -466,6 +476,63 @@ public partial class RegionCaptureWindow : Window
             default: return;
         }
         e.Handled = true;
+    }
+
+    void Eyedropper_Click(object sender, RoutedEventArgs e)
+    {
+        _tool = Tool.Eyedropper;
+        Toolbar.Visibility = Visibility.Collapsed;
+        HelpBadgeText.Text = "Кликни по любому цвету — hex в буфер";
+        HelpBadge.Visibility = Visibility.Visible;
+        Cursor = Cursors.Cross;
+    }
+
+    void PickColor(Point p)
+    {
+        try
+        {
+            var px = (int)(p.X * _scale);
+            var py = (int)(p.Y * _scale);
+            px = Math.Clamp(px, 0, _frozen.PixelWidth - 1);
+            py = Math.Clamp(py, 0, _frozen.PixelHeight - 1);
+            var conv = new FormatConvertedBitmap(_frozen, PixelFormats.Bgra32, null, 0);
+            var bytes = new byte[4];
+            conv.CopyPixels(new Int32Rect(px, py, 1, 1), bytes, 4, 0);
+            var hex = $"#{bytes[2]:X2}{bytes[1]:X2}{bytes[0]:X2}";
+            Clipboard.SetText(hex);
+            AppServices.Notifier?.Show("Цвет под курсором", hex + " — в буфере обмена", NotifyKind.Success);
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Eyedropper failed", ex);
+            AppServices.Notifier?.Show("Пипетка не сработала", ex.Message, NotifyKind.Error);
+        }
+    }
+
+    bool _ocrBusy;
+
+    async void Ocr_Click(object sender, RoutedEventArgs e)
+    {
+        if (_ocrBusy || _sel.IsEmpty || _sel.Width < 4 || _sel.Height < 4) return;
+        _ocrBusy = true;
+        try
+        {
+            var image = RenderSelection();
+            var text = await OcrText.RecognizeAsync(image);
+            if (string.IsNullOrWhiteSpace(text))
+                AppServices.Notifier?.Show("OCR", "Текст не найден", NotifyKind.Warning);
+            else
+            {
+                Clipboard.SetText(text.Trim());
+                AppServices.Notifier?.Show("OCR готово", $"{text.Trim().Length} символов — в буфере обмена", NotifyKind.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error("OCR failed", ex);
+            AppServices.Notifier?.Show("OCR не сработал", ex.Message, NotifyKind.Error);
+        }
+        finally { _ocrBusy = false; }
     }
 
     void SaveAs_Click(object sender, RoutedEventArgs e) => SaveAs();

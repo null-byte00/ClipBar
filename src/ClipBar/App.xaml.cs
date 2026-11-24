@@ -23,6 +23,7 @@ public partial class App : Application
     ShellService? _shell;
     ToastNotifier? _toasts;
     UI.Overlay.RecordingHud? _hud;
+    Library.ScreenshotWatcher? _shotWatcher;
     Dictionary<HotkeyAction, string>? _appliedHotkeys;
     bool _exiting, _cleanedUp;
 
@@ -78,6 +79,7 @@ public partial class App : Application
             AppServices.Engine = new Capture.CaptureEngine(settings, AppServices.Audio);
             _hud = new UI.Overlay.RecordingHud(AppServices.Engine);
             AppServices.Library = new Library.ClipLibrary(settings);
+            _shotWatcher = new Library.ScreenshotWatcher();
             _toasts = new ToastNotifier();
             AppServices.Notifier = _toasts;
             _shell = new ShellService();
@@ -252,6 +254,7 @@ public partial class App : Application
         Try(() => AppServices.Audio?.Dispose(), "audio");
         Try(() => _toasts?.Dispose(), "toasts");
         Try(() => _hud?.Close(), "hud");
+        Try(() => _shotWatcher?.Dispose(), "shotwatcher");
         Try(() => _shell?.CloseWindows(), "windows");
         Log.Info("Services disposed");
 

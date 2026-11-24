@@ -139,7 +139,7 @@
                 <TextBlock x:Name="SizeText" Foreground="White" FontSize="12" />
             </Border>
             <Border x:Name="HelpBadge" Background="#E6141414" CornerRadius="6" Padding="12,7" Canvas.Left="24" Canvas.Top="24">
-                <TextBlock Foreground="#FFE0E0E0" FontSize="13" Text="Выдели область мышкой  ·  Esc — отмена" />
+                <TextBlock x:Name="HelpBadgeText" Foreground="#FFE0E0E0" FontSize="13" Text="Выдели область мышкой  ·  Esc — отмена" />
             </Border>
         </Canvas>
 
@@ -191,6 +191,10 @@
                             Background="#33E81123" Click="Save_Click" />
                     <Button Style="{StaticResource Rc.Action}" Content="Как…" Tag="{x:Static ui:SymbolRegular.SaveEdit20}"
                             ToolTip="Сохранить как… — выбрать папку, имя и формат (Ctrl+Shift+S)" Click="SaveAs_Click" />
+                    <Button Style="{StaticResource Rc.Action}" Content="OCR" Tag="{x:Static ui:SymbolRegular.TextT20}"
+                            ToolTip="Распознать текст в выделении — в буфер обмена" Click="Ocr_Click" />
+                    <Button Style="{StaticResource Rc.Action}" Content="Пипетка" Tag="{x:Static ui:SymbolRegular.PaintBrush20}"
+                            ToolTip="Кликни по цвету на экране — hex в буфер обмена" Click="Eyedropper_Click" />
                     <Button Style="{StaticResource Rc.Action}" Content="Закрыть" Tag="{x:Static ui:SymbolRegular.Dismiss20}" ToolTip="Esc" Click="Cancel_Click" />
                 </StackPanel>
             </Border>
