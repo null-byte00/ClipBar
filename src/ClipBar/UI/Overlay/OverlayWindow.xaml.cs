@@ -112,10 +112,9 @@ public partial class OverlayWindow : Window, IOverlayHost
             Show();
             ApplyBounds();
 
-            Activate();
-            OverlayNative.ForceForeground(_hwnd);
-            Root.Focus();
-            Keyboard.Focus(Root);
+            // фокус не трогаем — иначе эксклюзивный фуллскрин сворачивается.
+            // Esc ловим глобально, пока оверлей открыт
+            try { Hotkeys.HotkeyNative.RegisterHotKey(_hwnd, EscHotkeyId, 0, 0x1B); } catch { }
 
             if (AppServices.Engine is { } engine) engine.StateChanged += OnEngineStateChanged;
             ActivateWidget(_audio!);
@@ -166,6 +165,7 @@ public partial class OverlayWindow : Window, IOverlayHost
     {
         try
         {
+            try { Hotkeys.HotkeyNative.UnregisterHotKey(_hwnd, EscHotkeyId); } catch { }
             CloseContent();
             Hide();
             Root.BeginAnimation(OpacityProperty, null);
@@ -423,14 +423,31 @@ public partial class OverlayWindow : Window, IOverlayHost
         catch (Exception ex) { Log.Error("SetMonitoring failed", ex); }
     }
 
+    const int EscHotkeyId = 0x5E5C;
+
+    IntPtr OverlayWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == Hotkeys.HotkeyNative.WM_HOTKEY && wParam.ToInt32() == EscHotkeyId)
+        {
+            HandleEscape();
+            handled = true;
+        }
+        return IntPtr.Zero;
+    }
+
     void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Escape) return;
+        HandleEscape();
+        e.Handled = true;
+    }
+
+    void HandleEscape()
+    {
         if (IsAnyDropDownOpen(this)) return;
         if (_contentView is "editor" or "image") ShowGallery();
         else if (_contentView is not null) CloseContent();
         else HideOverlay();
-        e.Handled = true;
     }
 
     static bool IsAnyDropDownOpen(DependencyObject root)
@@ -465,7 +482,8 @@ public partial class OverlayWindow : Window, IOverlayHost
     {
         base.OnSourceInitialized(e);
         _hwnd = new WindowInteropHelper(this).Handle;
-        OverlayNative.MakeToolWindow(_hwnd);
+        OverlayNative.MakeToolWindow(_hwnd, noActivate: true);
+        HwndSource.FromHwnd(_hwnd)?.AddHook(OverlayWndProc);
         EnableGpuTransparency(_hwnd);
         // env-флаг перебивает настройку (для отладки), иначе — из настроек
         if (Environment.GetEnvironmentVariable("CLIPBAR_OVERLAY_CAPTURABLE") != "1"

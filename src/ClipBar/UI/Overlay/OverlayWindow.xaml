@@ -4,7 +4,7 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="ClipBar — оверлей"
         WindowStyle="None" AllowsTransparency="False" Background="Transparent" ResizeMode="NoResize"
-        ShowInTaskbar="False" Topmost="True" ShowActivated="True"
+        ShowInTaskbar="False" Topmost="True" ShowActivated="False"
         FontFamily="{StaticResource CB.Font}" TextOptions.TextFormattingMode="Display"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
         PreviewKeyDown="Window_PreviewKeyDown">
