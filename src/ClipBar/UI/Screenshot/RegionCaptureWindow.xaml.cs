@@ -34,6 +34,7 @@ public partial class RegionCaptureWindow : Window
     int _resizeEdges;
 
     Tool _tool = Tool.Move;
+    Tool _prevTool = Tool.Move;
     Color _color = Color.FromRgb(0xFF, 0x2D, 0x3F);
     double _size = 8;
 
@@ -97,6 +98,18 @@ public partial class RegionCaptureWindow : Window
         if (_tool == Tool.Eyedropper)
         {
             PickColor(p);
+            _tool = _prevTool;
+            if (!_sel.IsEmpty && _sel.Width >= 4 && _sel.Height >= 4)
+            {
+                Toolbar.Visibility = Visibility.Visible;
+                PlaceToolbar();
+            }
+            else
+            {
+                HelpBadgeText.Text = "Выдели область мышкой  ·  Esc — отмена";
+                HelpBadge.Visibility = Visibility.Visible;
+            }
+            UpdateHoverCursor(p);
             e.Handled = true;
             return;
         }
@@ -480,12 +493,15 @@ public partial class RegionCaptureWindow : Window
 
     void Eyedropper_Click(object sender, RoutedEventArgs e)
     {
+        _prevTool = _tool;
         _tool = Tool.Eyedropper;
         Toolbar.Visibility = Visibility.Collapsed;
         HelpBadgeText.Text = "Кликни по любому цвету — hex в буфер";
         HelpBadge.Visibility = Visibility.Visible;
         Cursor = Cursors.Cross;
     }
+
+    RadioButton? _customSwatch;
 
     void PickColor(Point p)
     {
@@ -500,7 +516,22 @@ public partial class RegionCaptureWindow : Window
             conv.CopyPixels(new Int32Rect(px, py, 1, 1), bytes, 4, 0);
             var hex = $"#{bytes[2]:X2}{bytes[1]:X2}{bytes[0]:X2}";
             Clipboard.SetText(hex);
-            AppServices.Notifier?.Show("Цвет под курсором", hex + " — в буфере обмена", NotifyKind.Success);
+
+            // выбранный цвет становится цветом рисования
+            var c = Color.FromRgb(bytes[2], bytes[1], bytes[0]);
+            _color = c;
+            if (_editingText is { } box) { box.Foreground = InkBrush(); box.CaretBrush = InkBrush(); }
+            var brush = new SolidColorBrush(c); brush.Freeze();
+            if (_customSwatch is null)
+            {
+                _customSwatch = new RadioButton { Style = (Style)FindResource("Rc.Swatch"), Background = brush, ToolTip = "Цвет пипетки" };
+                _customSwatch.Checked += Color_Checked;
+                ColorsPanel.Children.Insert(0, _customSwatch);
+            }
+            else _customSwatch.Background = brush;
+            _customSwatch.IsChecked = true;
+
+            AppServices.Notifier?.Show("Цвет под курсором", hex + " — в буфере и в палитре", NotifyKind.Success);
         }
         catch (Exception ex)
         {
@@ -513,7 +544,12 @@ public partial class RegionCaptureWindow : Window
 
     async void Ocr_Click(object sender, RoutedEventArgs e)
     {
-        if (_ocrBusy || _sel.IsEmpty || _sel.Width < 4 || _sel.Height < 4) return;
+        if (_ocrBusy) return;
+        if (_sel.IsEmpty || _sel.Width < 4 || _sel.Height < 4)
+        {
+            AppServices.Notifier?.Show("OCR", "Сначала выдели область мышкой", NotifyKind.Warning);
+            return;
+        }
         _ocrBusy = true;
         try
         {

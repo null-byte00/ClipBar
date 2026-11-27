@@ -157,6 +157,10 @@ public sealed class AudioHub : IAudioHub
         AudioFormatConverter? _converter;
         readonly Func<float> _gain;
         readonly Func<bool>? _mutedFn;
+        volatile bool _disposed;
+        bool _isLoopback;
+        int _restartScheduled;
+        int _restartAttempts;
 
         public string? DeviceId { get; }
 
@@ -195,8 +199,9 @@ public sealed class AudioHub : IAudioHub
             return state;
         }
 
-        void Start(string? deviceId, bool isLoopback)
+        void Start(string? deviceId, bool isLoopback, bool quiet = false)
         {
+            _isLoopback = isLoopback;
             try
             {
                 using var enumerator = new MMDeviceEnumerator();
@@ -216,6 +221,7 @@ public sealed class AudioHub : IAudioHub
                     if (e.Exception != null)
                         Log.Error($"AudioHub: capture stopped unexpectedly: {e.Exception.Message}");
                     Available = false;
+                    ScheduleRestart();
                 };
                 capture.StartRecording();
                 _capture = capture;
@@ -223,9 +229,52 @@ public sealed class AudioHub : IAudioHub
             }
             catch (Exception ex)
             {
-                Log.Error($"AudioHub: failed to start {(isLoopback ? "system" : "mic")} capture: {ex.Message}");
+                if (!quiet) Log.Error($"AudioHub: failed to start {(isLoopback ? "system" : "mic")} capture: {ex.Message}");
                 Available = false;
             }
+        }
+
+        void ScheduleRestart()
+        {
+            if (_disposed || Interlocked.Exchange(ref _restartScheduled, 1) != 0) return;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(1000).ConfigureAwait(false);
+                    while (!_disposed)
+                    {
+                        _restartAttempts++;
+                        RestartCapture();
+                        if (Available)
+                        {
+                            _restartAttempts = 0;
+                            Log.Info($"AudioHub: {( _isLoopback ? "system" : "mic")} capture restored");
+                            return;
+                        }
+                        await Task.Delay(3000).ConfigureAwait(false);
+                    }
+                }
+                catch { }
+                finally { Interlocked.Exchange(ref _restartScheduled, 0); }
+            });
+        }
+
+        void RestartCapture()
+        {
+            try
+            {
+                if (_capture != null)
+                {
+                    _capture.DataAvailable -= OnDataAvailable;
+                    try { _capture.StopRecording(); } catch { }
+                    _capture.Dispose();
+                    _capture = null;
+                    _converter = null;
+                }
+            }
+            catch (Exception ex) { Log.Error($"AudioHub: error stopping dead capture: {ex.Message}"); }
+            Start(DeviceId, _isLoopback, quiet: _restartAttempts > 1);
         }
 
         void OnDataAvailable(object? sender, WaveInEventArgs e)
@@ -268,6 +317,7 @@ public sealed class AudioHub : IAudioHub
 
         public void Dispose()
         {
+            _disposed = true;
             try { if (_capture != null) { _capture.DataAvailable -= OnDataAvailable; _capture.StopRecording(); _capture.Dispose(); } }
             catch (Exception ex) { Log.Error($"AudioHub: error stopping capture: {ex.Message}"); }
             Available = false;

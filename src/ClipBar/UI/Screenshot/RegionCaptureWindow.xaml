@@ -164,7 +164,7 @@
 
                     <Rectangle Width="1" Fill="#33FFFFFF" Margin="4,6" />
                     <StackPanel VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel x:Name="ColorsPanel" Orientation="Horizontal">
                             <RadioButton Style="{StaticResource Rc.Swatch}" Background="#FFFF2D3F" IsChecked="True" Checked="Color_Checked" />
                             <RadioButton Style="{StaticResource Rc.Swatch}" Background="#FFFFD60A" Checked="Color_Checked" />
                             <RadioButton Style="{StaticResource Rc.Swatch}" Background="#FF30D158" Checked="Color_Checked" />
